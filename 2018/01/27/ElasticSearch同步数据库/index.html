@@ -79,16 +79,17 @@
 
 
 
-<meta name="description" content="Java">
-<meta property="og:type" content="website">
-<meta property="og:title" content="TechLiving">
-<meta property="og:url" content="http://yoursite.com/index.html">
+<meta name="description" content="在需要全文检索的场景下，ElasticSearch（后面统一简称ES）可以有效降低关系型数据库Like查询的系统负载和开销，提升检索精度和速度。 如何做到ES和数据库的数据同步？这里介绍一下logstash-input-jdbc插件（logstash 5以上版本已经自带）实现分钟级别的数据同步。 举例说明如何用logstash实施同步数据库。假如有这样一张航班信息表：(只是举例，不考虑实际项目中表">
+<meta property="og:type" content="article">
+<meta property="og:title" content="ElasticSearch同步数据库">
+<meta property="og:url" content="http://yoursite.com/2018/01/27/ElasticSearch同步数据库/index.html">
 <meta property="og:site_name" content="TechLiving">
-<meta property="og:description" content="Java">
+<meta property="og:description" content="在需要全文检索的场景下，ElasticSearch（后面统一简称ES）可以有效降低关系型数据库Like查询的系统负载和开销，提升检索精度和速度。 如何做到ES和数据库的数据同步？这里介绍一下logstash-input-jdbc插件（logstash 5以上版本已经自带）实现分钟级别的数据同步。 举例说明如何用logstash实施同步数据库。假如有这样一张航班信息表：(只是举例，不考虑实际项目中表">
 <meta property="og:locale" content="zh-Hans">
+<meta property="og:updated_time" content="2018-01-27T10:34:16.868Z">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:title" content="TechLiving">
-<meta name="twitter:description" content="Java">
+<meta name="twitter:title" content="ElasticSearch同步数据库">
+<meta name="twitter:description" content="在需要全文检索的场景下，ElasticSearch（后面统一简称ES）可以有效降低关系型数据库Like查询的系统负载和开销，提升检索精度和速度。 如何做到ES和数据库的数据同步？这里介绍一下logstash-input-jdbc插件（logstash 5以上版本已经自带）实现分钟级别的数据同步。 举例说明如何用logstash实施同步数据库。假如有这样一张航班信息表：(只是举例，不考虑实际项目中表">
 
 
 
@@ -118,13 +119,13 @@
 
 
 
-  <link rel="canonical" href="http://yoursite.com/"/>
+  <link rel="canonical" href="http://yoursite.com/2018/01/27/ElasticSearch同步数据库/"/>
 
 
 
 
 
-  <title>TechLiving</title>
+  <title>ElasticSearch同步数据库 | TechLiving</title>
   
 
 
@@ -143,8 +144,7 @@
     
   
 
-  <div class="container sidebar-position-left 
-  page-home">
+  <div class="container sidebar-position-left page-post-detail">
     <div class="headband"></div>
 
     <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
@@ -217,9 +217,9 @@
         <div class="content-wrap">
           <div id="content" class="content">
             
-  <section id="posts" class="posts-expand">
+
+  <div id="posts" class="posts-expand">
     
-      
 
   
 
@@ -249,9 +249,7 @@
 
         
         
-          <h1 class="post-title" itemprop="name headline">
-                
-                <a class="post-title-link" href="/2018/01/27/ElasticSearch同步数据库/" itemprop="url">ElasticSearch同步数据库</a></h1>
+          <h1 class="post-title" itemprop="name headline">ElasticSearch同步数据库</h1>
         
 
         <div class="post-meta">
@@ -301,9 +299,7 @@
       
 
       
-        
-          
-            <p>在需要全文检索的场景下，ElasticSearch（后面统一简称ES）可以有效降低关系型数据库Like查询的系统负载和开销，提升检索精度和速度。</p>
+        <p>在需要全文检索的场景下，ElasticSearch（后面统一简称ES）可以有效降低关系型数据库Like查询的系统负载和开销，提升检索精度和速度。</p>
 <p>如何做到ES和数据库的数据同步？这里介绍一下logstash-input-jdbc插件（logstash 5以上版本已经自带）实现分钟级别的数据同步。</p>
 <p>举例说明如何用logstash实施同步数据库。假如有这样一张航班信息表：(只是举例，不考虑实际项目中表设计需要遵守的约束和优化规则)<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line">create table flight_info &#123;</span><br><span class="line">    id int auto_increment,</span><br><span class="line">    flight_no varchar(10),</span><br><span class="line">    airline varchar(2),</span><br><span class="line">    flight_num varchar(5),</span><br><span class="line">    flight_date varchar(10),</span><br><span class="line">    depcode varchar(3),</span><br><span class="line">    arrcode varchar(3),</span><br><span class="line">    deptime varchar(20),</span><br><span class="line">    arrtime varchar(20),</span><br><span class="line">    flight_status varchar(10),</span><br><span class="line">    create_time date,</span><br><span class="line">    update_time date</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
 <p>一条典型的数据记录如：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">insert into flight_info values (1,&apos;CZ3117&apos;,&apos;CZ&apos;,&apos;3117&apos;,&apos;2018-01-27&apos;,&apos;WUH&apos;,&apos;PEK&apos;,&apos;2017-01-27 09:42:00&apos;,&apos;2017-01-27 11:20:00&apos;,&apos;到达&apos;,&apos;2017-01-26 10:00:00&apos;,&apos;2017-01-27 11:20:30&apos;);</span><br></pre></td></tr></table></figure></p>
@@ -324,14 +320,20 @@
 <p>实现项目中，如果对数据及时性要求很高，就需要应用程序去实时更新ES了。当然应用程序用异步线程更新或推送消息队列，可能是更合理的选择。ES的API其实也是支持异步更新操作的。</p>
 <p>logstash-input-jdbc没办法解决数据库的delete操作。只能将物理删除转找成逻辑删除，即将某个状态值update成已删除状态。也可以由应用程序在delete操作后去实时更新ES。</p>
 
-          
-        
       
     </div>
     
     
     
 
+    
+      <div>
+        <div id="wechat_subscriber" style="display: block; padding: 10px 0; margin: 20px auto; width: 100%; text-align: center">
+    <img id="wechat_subscriber_qcode" src="https://raw.githubusercontent.com/liaorui/liaorui.github.io/master/images/weixin_qrcode.jpg" alt="Liao Rui wechat" style="width: 200px; max-width: 100%;"/>
+    <div>欢迎关注我的微信公众号《技术与生活小站》</div>
+</div>
+
+      </div>
     
 
     
@@ -342,149 +344,28 @@
       
 
       
-
-      
-
       
       
-        <div class="post-eof"></div>
+
       
-
-    </footer>
-  </div>
-  
-  
-  
-  </article>
-
-
-    
-      
-
-  
-
-  
-  
-  
-
-  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
-  
-  
-  
-  <div class="post-block">
-    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2018/01/22/Twitter-commons-thrift-pool源码分析/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="name" content="Liao Rui">
-      <meta itemprop="description" content="">
-      <meta itemprop="image" content="/images/avatar.gif">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="TechLiving">
-    </span>
-
-    
-      <header class="post-header">
-
-        
-        
-          <h1 class="post-title" itemprop="name headline">
-                
-                <a class="post-title-link" href="/2018/01/22/Twitter-commons-thrift-pool源码分析/" itemprop="url">Twitter commons thrift pool源码分析</a></h1>
-        
-
-        <div class="post-meta">
-          <span class="post-time">
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
             
-              <span class="post-meta-item-icon">
-                <i class="fa fa-calendar-o"></i>
-              </span>
-              
-                <span class="post-meta-item-text">发表于</span>
-              
-              <time title="创建于" itemprop="dateCreated datePublished" datetime="2018-01-22T08:33:52+08:00">
-                2018-01-22
-              </time>
+              <a href="/2018/01/22/Twitter-commons-thrift-pool源码分析/" rel="next" title="Twitter commons thrift pool源码分析">
+                <i class="fa fa-chevron-left"></i> Twitter commons thrift pool源码分析
+              </a>
             
+          </div>
 
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
             
-
-            
-          </span>
-
-          
-
-          
-            
-          
-
-          
-          
-
-          
-
-          
-
-          
-
+          </div>
         </div>
-      </header>
-    
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
       
 
       
-        
-          
-            <p>Thrift是一套高性能、跨语言平台的RPC框架。Thrift可以使用TCP短连接和长连接。在调用量很大时，长连接可以有效避免频繁的TCP创建和连接，相对短连接可以提升性能。如果客户端需要高并发访问服务，单个TCP长连接只能顺序流转数据请求和接收，会严重影响并发性能，所以需要引入连接池。就像数据库连接池一样，一个client和server同时建立多个长连接，同时通讯调用，提升并发性能。  </p>
-<p>Thrift本身并没有提供长连接的连接池，常见的做法是用<a href="https://commons.apache.org/proper/commons-pool/" target="_blank" rel="noopener">apache commons-pool</a>实现自己的Object连接池。本文将介绍<a href="https://github.com/twitter/commons" target="_blank" rel="noopener">twitter commons</a>包里提供的thrift连接池，并简要分析一下其源码实现方式。  </p>
-<p>Twitter commons thrift主要提供了ThriftFactory<t>和Thrift<t>两个类。ThriftFactory<t>用工厂模式创建Thrift<t>，然后再通过Thrift<t>内部类ClientBuilder生成具体的thrift业务接口桩。类的关系图大致如下：</t></t></t></t></t></p>
-<p><img src="/2018/01/22/Twitter-commons-thrift-pool源码分析/thrift-pool.png" alt=""></p>
-<p>先看看ThriftFactory创建Thrift的代码：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">Thrift&lt;T&gt; thrift = ThriftFactory.create(T.class)</span><br><span class="line">    .withClientFactory(clientFactory)</span><br><span class="line">    .withServiceName(T.getName())</span><br><span class="line">    .withMaxConnectionsPerEndpoint(20)</span><br><span class="line">    .withSocketTimeout(Amount.of(30L, Time.SECONDS))</span><br><span class="line">    .useFramedTransport(true)</span><br><span class="line">    .build(ImmutableSet.copyOf(addrs))</span><br></pre></td></tr></table></figure></p>
-<p>ThriftFactory的构造方法是private的，create()方法用的是单例模式。<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">private ThriftFactory(Class&lt;T&gt; serviceInterface) &#123;</span><br><span class="line">    ...</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">public static &lt;T&gt; ThriftFactory&lt;T&gt; create(Class&lt;T&gt; serviceInterface) &#123;</span><br><span class="line">    return new ThriftFactory&lt;T&gt;(serviceInterface);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<p>几个with方法，都是设置属性，重点看一下build()方法，它创建了Thrift<t>对象。<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line">public Thrift&lt;T&gt; build(Set&lt;InetSocketAddress&gt; backends) &#123;</span><br><span class="line">    checkBaseState();</span><br><span class="line">    MorePreconditions.checkNotBlank(backends);</span><br><span class="line"></span><br><span class="line">    ManagedThreadPool managedThreadPool = createManagedThreadpool(backends.size());</span><br><span class="line">    LoadBalancer&lt;InetSocketAddress&gt; loadBalancer = createLoadBalancer();</span><br><span class="line">    Function&lt;TTransport, T&gt; clientFactory = getClientFactory();</span><br><span class="line"></span><br><span class="line">    ObjectPool&lt;Connection&lt;TTransport, InetSocketAddress&gt;&gt; connectionPool =</span><br><span class="line">        createConnectionPool(backends, loadBalancer, managedThreadPool, false);</span><br><span class="line"></span><br><span class="line">    return new Thrift&lt;T&gt;(managedThreadPool, connectionPool, loadBalancer, serviceName,</span><br><span class="line">        serviceInterface, clientFactory, false, sslTransport);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></t></p>
-<p>getClientFactory()方法默认创建的是TBinaryProtocol协议，如果我们需要用TMultiplexedProtocol协议，需要自己实现一个ClientFactory。其实很简单，仿照createClientFactory()方法即可。<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">private static &lt;T&gt; Function&lt;TTransport, T&gt; createClientFactory(Class&lt;T&gt; serviceInterface) &#123;</span><br><span class="line">    ...</span><br><span class="line">    return implementationConstructor.newInstance(new TBinaryProtocol(transport));</span><br><span class="line">    ...</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">改成：</span><br><span class="line">private static &lt;T&gt; Function&lt;TTransport, T&gt; createClientFactory(Class&lt;T&gt; serviceInterface, final String serviceName) &#123;</span><br><span class="line">    ...</span><br><span class="line">    return implementationConstructor.newInstance(new TMultiplexedProtocol(new TBinaryProtocol(transport), serviceName));</span><br><span class="line">    ...            </span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
-<p>当拿到Thrift<t>对象后，就可以创建thrift业务接口的具体实例了。<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">thrift.builder()</span><br><span class="line">    .withConnectTimeout(Amount.of(30L, Time.SECONDS))</span><br><span class="line">    .withRequestTimeout(Amount.of(30L, Time.SECONDS))</span><br><span class="line">    .disableStats()</span><br><span class="line">    .create()</span><br></pre></td></tr></table></figure></t></p>
-<p>builder()方法直接创建了一个ClientBuilder对象。可以对ClientBuilder设置超时、统计等属性。最后的create()方法实现是关键:<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br></pre></td><td class="code"><pre><span class="line">public T create() &#123;</span><br><span class="line">    return createClient(defaultConfig);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">private T createClient(Config config) &#123;</span><br><span class="line">    ...</span><br><span class="line">    Caller decorated = new ThriftCaller&lt;T&gt;(connectionPool, requestTracker, clientFactory,</span><br><span class="line">        config.getConnectTimeout(), debug);</span><br><span class="line"></span><br><span class="line">    ...</span><br><span class="line">    final Caller caller = decorated;</span><br><span class="line">    final InvocationHandler invocationHandler = new InvocationHandler() &#123;</span><br><span class="line">      @Override</span><br><span class="line">      public Object invoke(Object o, Method method, Object[] args) throws Throwable &#123;</span><br><span class="line">        ...</span><br><span class="line">        return caller.call(method, args, callback, null);</span><br><span class="line">      &#125;</span><br><span class="line">    &#125;;</span><br><span class="line"></span><br><span class="line">    @SuppressWarnings(&quot;unchecked&quot;)</span><br><span class="line">    T instance = (T) Proxy.newProxyInstance(serviceInterface.getClassLoader(),</span><br><span class="line">        new Class&lt;?&gt;[] &#123;serviceInterface&#125;, invocationHandler);</span><br><span class="line">    return instance;</span><br><span class="line">  &#125;</span><br></pre></td></tr></table></figure></p>
-<p>这里用到了动态代理模式，会在invocationHandler里自动调用caller.call()方法。而call()方法的具体实现是ThriftCaller的call()方法：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">public Object call(Method method, Object[] args, @Nullable AsyncMethodCallback&lt;?&gt; callback,</span><br><span class="line">      @Nullable Amount&lt;Long, Time&gt; connectTimeoutOverride) throws Throwable &#123;</span><br><span class="line">    ...</span><br><span class="line">    return invokeMethod(clientFactory.apply(connection.get()), method, args, callback, capture);</span><br><span class="line">  &#125;</span><br></pre></td></tr></table></figure></p>
-<p>最终调用了clientFactory.apply()方法。而clientFactory就是前面的：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">private static &lt;T&gt; Function&lt;TTransport, T&gt; createClientFactory(Class&lt;T&gt; serviceInterface, final String serviceName) &#123;</span><br><span class="line">    ...</span><br><span class="line">    return implementationConstructor.newInstance(new TMultiplexedProtocol(new TBinaryProtocol(transport), serviceName));</span><br><span class="line">    ...            </span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
-<p>用Java反射技术调用了业务实现类的构造方法，创建一个业务实现类对象。</p>
-<p>至此，拿到业务实现类对象后，就可以进行后续的RPC调用了。</p>
-<p>总得来说，twitter commons的thrift连接池采用的是Java动态代理和反射技术，动态生成业务实现类。</p>
-<p>作为一个连接池，是如何缓存对象，如何管理连接数的，后续文章再作分析。</p>
-
-          
-        
-      
-    </div>
-    
-    
-    
-
-    
-
-    
-
-    
-
-    <footer class="post-footer">
-      
-
-      
-
-      
-
-      
-      
-        <div class="post-eof"></div>
       
 
     </footer>
@@ -495,10 +376,11 @@
   </article>
 
 
-    
-  </section>
 
-  
+    <div class="post-spread">
+      
+    </div>
+  </div>
 
 
           </div>
@@ -506,6 +388,10 @@
 
 
           
+
+  
+
+
 
         </div>
         
@@ -702,6 +588,10 @@
   
 
   
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.4"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.4"></script>
+
+
 
   
 
