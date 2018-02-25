@@ -232,6 +232,138 @@
   
   
   <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2018/02/25/Spring-Boot项目maven打包方式总结/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="Liao Rui">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="TechLiving">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">
+                
+                <a class="post-title-link" href="/2018/02/25/Spring-Boot项目maven打包方式总结/" itemprop="url">Spring Boot项目maven打包方式总结</a></h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2018-02-25T08:49:55+08:00">
+                2018-02-25
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        
+          
+            <p>Spring Boot将Spring框架和第三方依赖jar包集成在一起，开发者只需要很少的配置就可以实现”just run”的目标。</p>
+<p>Spring Boot为maven管理的项目提供了spring-boot-maven-plugin插件，自动打包各种依赖包，生成一个java -jar直接运行的单独的jar包。<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">&lt;plugin&gt;</span><br><span class="line">    &lt;groupId&gt;org.springframework.boot&lt;/groupId&gt;</span><br><span class="line">    &lt;artifactId&gt;spring-boot-maven-plugin&lt;/artifactId&gt;</span><br><span class="line">    &lt;version&gt;1.4.2.RELEASE&lt;/version&gt;</span><br><span class="line">&lt;/plugin&gt;</span><br></pre></td></tr></table></figure></p>
+<p>这种打包方式适合于服务器端打包，可以避免各种配置错误和依赖包缺少及冲突，常用Jenkins+git+maven来做持续集成发布。</p>
+<p>而在某些场景下，想直接在本地打包，再上传到服务器运行，由于jar包通常都是50M以上，需要花费较长的网络传输时间。特别是网络情况不好时，经常上传失败，严重影响工作效率。</p>
+<p>可以用如下maven插件配置，将业务代码和依赖lib库分离，lib目录下的各个依赖包一次上传服务器，后续只需要上传业务代码jar包就行了，不需要每次重复上传依赖包。<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br></pre></td><td class="code"><pre><span class="line">&lt;plugin&gt;</span><br><span class="line">    &lt;groupId&gt;org.apache.maven.plugins&lt;/groupId&gt;</span><br><span class="line">    &lt;artifactId&gt;maven-jar-plugin&lt;/artifactId&gt;</span><br><span class="line">    &lt;configuration&gt;</span><br><span class="line">        &lt;encoding&gt;UTF-8&lt;/encoding&gt;</span><br><span class="line">        &lt;archive&gt;</span><br><span class="line">            &lt;manifest&gt;</span><br><span class="line">                &lt;mainClass&gt;com.xxx.Application&lt;/mainClass&gt;</span><br><span class="line">                &lt;addClasspath&gt;true&lt;/addClasspath&gt;</span><br><span class="line">                &lt;classpathPrefix&gt;lib/&lt;/classpathPrefix&gt;</span><br><span class="line">            &lt;/manifest&gt;</span><br><span class="line">        &lt;/archive&gt;</span><br><span class="line">    &lt;/configuration&gt;</span><br><span class="line">&lt;/plugin&gt;</span><br><span class="line">&lt;plugin&gt;</span><br><span class="line">    &lt;groupId&gt;org.apache.maven.plugins&lt;/groupId&gt;</span><br><span class="line">    &lt;artifactId&gt;maven-dependency-plugin&lt;/artifactId&gt;</span><br><span class="line">    &lt;executions&gt;</span><br><span class="line">        &lt;execution&gt;</span><br><span class="line">            &lt;id&gt;copy-dependencies&lt;/id&gt;</span><br><span class="line">            &lt;phase&gt;package&lt;/phase&gt;</span><br><span class="line">            &lt;goals&gt;</span><br><span class="line">                &lt;goal&gt;copy-dependencies&lt;/goal&gt;</span><br><span class="line">            &lt;/goals&gt;</span><br><span class="line">            &lt;configuration&gt;</span><br><span class="line">                &lt;outputDirectory&gt;$&#123;project.build.directory&#125;/lib&lt;/outputDirectory&gt;</span><br><span class="line">                &lt;overWriteReleases&gt;false&lt;/overWriteReleases&gt;</span><br><span class="line">                &lt;overWriteSnapshots&gt;false&lt;/overWriteSnapshots&gt;</span><br><span class="line">                &lt;overWriteIfNewer&gt;true&lt;/overWriteIfNewer&gt;</span><br><span class="line">            &lt;/configuration&gt;</span><br><span class="line">        &lt;/execution&gt;</span><br><span class="line">    &lt;/executions&gt;</span><br><span class="line">&lt;/plugin&gt;</span><br></pre></td></tr></table></figure></p>
+<p>原理是将各种依赖jar包全部放在lib目录下，然后在业务项目jar包里的META-INF/MANIFEST.MF里自动添加Class-Path路径。用java -jar运行时，可以自动去lib目录下加载依赖jar包。</p>
+<p>项目开发时，通常会有本地环境，测试环境和线上环境，每个环境的配置文件是不一样的。有如下两种解决方法。</p>
+<p>1、在src/main/resources下生成dev、test、production三个目录，分别放入各自配置文件，然后利用profile和resource属性指定。<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line">&lt;profiles&gt;</span><br><span class="line">    &lt;profile&gt;</span><br><span class="line">        &lt;id&gt;production&lt;/id&gt;</span><br><span class="line">        &lt;activation&gt;</span><br><span class="line">            &lt;activeByDefault&gt;true&lt;/activeByDefault&gt;</span><br><span class="line">        &lt;/activation&gt;</span><br><span class="line">        &lt;properties&gt;</span><br><span class="line">            &lt;env&gt;production&lt;/env&gt;</span><br><span class="line">        &lt;/properties&gt;</span><br><span class="line">    &lt;/profile&gt;</span><br><span class="line">    &lt;profile&gt;</span><br><span class="line">        &lt;id&gt;test&lt;/id&gt;</span><br><span class="line">        &lt;properties&gt;</span><br><span class="line">            &lt;env&gt;test&lt;/env&gt;</span><br><span class="line">        &lt;/properties&gt;</span><br><span class="line">    &lt;/profile&gt;</span><br><span class="line">    &lt;profile&gt;</span><br><span class="line">        &lt;id&gt;dev&lt;/id&gt;</span><br><span class="line">        &lt;properties&gt;</span><br><span class="line">            &lt;env&gt;dev&lt;/env&gt;</span><br><span class="line">        &lt;/properties&gt;</span><br><span class="line">    &lt;/profile&gt;</span><br><span class="line">&lt;/profiles&gt;</span><br></pre></td></tr></table></figure></p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line">&lt;resources&gt;</span><br><span class="line">    &lt;resource&gt;</span><br><span class="line">        &lt;directory&gt;src/main/resources/$&#123;env&#125;&lt;/directory&gt;</span><br><span class="line">        &lt;includes&gt;</span><br><span class="line">            &lt;include&gt;**/*.properties&lt;/include&gt;</span><br><span class="line">            &lt;include&gt;**/*.xml&lt;/include&gt;</span><br><span class="line">        &lt;/includes&gt;</span><br><span class="line">    &lt;/resource&gt;</span><br><span class="line">    &lt;resource&gt;</span><br><span class="line">        &lt;directory&gt;src/main/resources&lt;/directory&gt;</span><br><span class="line">        &lt;includes&gt;</span><br><span class="line">            &lt;include&gt;**/*.xml&lt;/include&gt;</span><br><span class="line">            &lt;include&gt;**/*.properties&lt;/include&gt;</span><br><span class="line">        &lt;/includes&gt;</span><br><span class="line">        &lt;excludes&gt;</span><br><span class="line">            &lt;exclude&gt;src/main/resources/META-INF&lt;/exclude&gt;</span><br><span class="line">        &lt;/excludes&gt;</span><br><span class="line">    &lt;/resource&gt;</span><br><span class="line">&lt;/resources&gt;</span><br></pre></td></tr></table></figure>
+<p>配置好后，通过maven的-P参数：mvn package -Pdev、mvn package -Ptest和mvn package -Pproduction，打包不同环境的配置文件。如果不指定-P，则默认是production环境。</p>
+<p>2、配置文件里用${}占位符，利用maven-resources-plugin自动填充。<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br></pre></td><td class="code"><pre><span class="line">application.properties配置：</span><br><span class="line">server.port=$&#123;server.port&#125;</span><br><span class="line"></span><br><span class="line">pom.xml配置：</span><br><span class="line">&lt;plugin&gt;</span><br><span class="line">    &lt;groupId&gt;org.apache.maven.plugins&lt;/groupId&gt;</span><br><span class="line">    &lt;artifactId&gt;maven-resources-plugin&lt;/artifactId&gt;</span><br><span class="line">    &lt;configuration&gt;</span><br><span class="line">        &lt;encoding&gt;UTF-8&lt;/encoding&gt;</span><br><span class="line">        &lt;delimiters&gt;</span><br><span class="line">            &lt;delimiter&gt;$&#123;*&#125;&lt;/delimiter&gt;</span><br><span class="line">        &lt;/delimiters&gt;</span><br><span class="line">        &lt;resources&gt;</span><br><span class="line">            &lt;resource&gt;</span><br><span class="line">                &lt;directory&gt;src/main/resources&lt;/directory&gt;</span><br><span class="line">                &lt;filtering&gt;true&lt;/filtering&gt;</span><br><span class="line">                &lt;includes&gt;</span><br><span class="line">                    &lt;include&gt;*.properties&lt;/include&gt;</span><br><span class="line">                    &lt;include&gt;*.xml&lt;/include&gt;</span><br><span class="line">                &lt;/includes&gt;</span><br><span class="line">            &lt;/resource&gt;</span><br><span class="line">        &lt;/resources&gt;</span><br><span class="line">    &lt;/configuration&gt;</span><br><span class="line">&lt;/plugin&gt;</span><br><span class="line"></span><br><span class="line">&lt;profiles&gt;</span><br><span class="line">    &lt;profile&gt;</span><br><span class="line">        &lt;id&gt;production&lt;/id&gt;</span><br><span class="line">        &lt;activation&gt;</span><br><span class="line">            &lt;activeByDefault&gt;true&lt;/activeByDefault&gt;</span><br><span class="line">        &lt;/activation&gt;</span><br><span class="line">        &lt;properties&gt;</span><br><span class="line">            &lt;server.port&gt;8080&lt;/server.port&gt;</span><br><span class="line">        &lt;/properties&gt;</span><br><span class="line">    &lt;/profile&gt;</span><br><span class="line">    &lt;profile&gt;</span><br><span class="line">        &lt;id&gt;test&lt;/id&gt;</span><br><span class="line">        &lt;properties&gt;</span><br><span class="line">            &lt;server.port&gt;6680&lt;/server.port&gt;</span><br><span class="line">        &lt;/properties&gt;</span><br><span class="line">    &lt;/profile&gt;</span><br><span class="line">    &lt;profile&gt;</span><br><span class="line">        &lt;id&gt;dev&lt;/id&gt;</span><br><span class="line">        &lt;properties&gt;</span><br><span class="line">            &lt;server.port&gt;6688&lt;/server.port&gt;</span><br><span class="line">        &lt;/properties&gt;</span><br><span class="line">    &lt;/profile&gt;</span><br><span class="line">&lt;/profiles&gt;</span><br></pre></td></tr></table></figure></p>
+<p>同样运行maven命令打包：mvn package -Pdev或-Ptest或-Pproduction即可。</p>
+
+          
+        
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+
+      
+
+      
+
+      
+      
+        <div class="post-eof"></div>
+      
+
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+    
+      
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
     <link itemprop="mainEntityOfPage" href="http://yoursite.com/2018/02/12/Dump1090设备标识/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -964,7 +1096,7 @@
               
                 <a href="/archives/">
               
-                  <span class="site-state-item-count">5</span>
+                  <span class="site-state-item-count">6</span>
                   <span class="site-state-item-name">日志</span>
                 </a>
               </div>

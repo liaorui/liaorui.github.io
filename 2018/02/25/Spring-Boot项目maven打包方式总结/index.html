@@ -1,0 +1,650 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next muse use-motion" lang="zh-Hans">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<meta name="theme-color" content="#222">
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.4" rel="stylesheet" type="text/css" />
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png?v=5.1.4">
+
+
+  <link rel="mask-icon" href="/images/logo.svg?v=5.1.4" color="#222">
+
+
+
+
+
+  <meta name="keywords" content="Hexo, NexT" />
+
+
+
+
+
+
+
+
+
+
+<meta name="description" content="Spring Boot将Spring框架和第三方依赖jar包集成在一起，开发者只需要很少的配置就可以实现”just run”的目标。 Spring Boot为maven管理的项目提供了spring-boot-maven-plugin插件，自动打包各种依赖包，生成一个java -jar直接运行的单独的jar包。12345&amp;lt;plugin&amp;gt;    &amp;lt;groupId&amp;gt;org.spr">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Spring Boot项目maven打包方式总结">
+<meta property="og:url" content="http://yoursite.com/2018/02/25/Spring-Boot项目maven打包方式总结/index.html">
+<meta property="og:site_name" content="TechLiving">
+<meta property="og:description" content="Spring Boot将Spring框架和第三方依赖jar包集成在一起，开发者只需要很少的配置就可以实现”just run”的目标。 Spring Boot为maven管理的项目提供了spring-boot-maven-plugin插件，自动打包各种依赖包，生成一个java -jar直接运行的单独的jar包。12345&amp;lt;plugin&amp;gt;    &amp;lt;groupId&amp;gt;org.spr">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:updated_time" content="2018-02-25T01:57:15.296Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Spring Boot项目maven打包方式总结">
+<meta name="twitter:description" content="Spring Boot将Spring框架和第三方依赖jar包集成在一起，开发者只需要很少的配置就可以实现”just run”的目标。 Spring Boot为maven管理的项目提供了spring-boot-maven-plugin插件，自动打包各种依赖包，生成一个java -jar直接运行的单独的jar包。12345&amp;lt;plugin&amp;gt;    &amp;lt;groupId&amp;gt;org.spr">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Muse',
+    version: '5.1.4',
+    sidebar: {"position":"left","display":"post","offset":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://yoursite.com/2018/02/25/Spring-Boot项目maven打包方式总结/"/>
+
+
+
+
+
+  <title>Spring Boot项目maven打包方式总结 | TechLiving</title>
+  
+
+
+
+
+
+
+
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">TechLiving</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle">Technology and Life</p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2018/02/25/Spring-Boot项目maven打包方式总结/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="Liao Rui">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="TechLiving">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">Spring Boot项目maven打包方式总结</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2018-02-25T08:49:55+08:00">
+                2018-02-25
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <p>Spring Boot将Spring框架和第三方依赖jar包集成在一起，开发者只需要很少的配置就可以实现”just run”的目标。</p>
+<p>Spring Boot为maven管理的项目提供了spring-boot-maven-plugin插件，自动打包各种依赖包，生成一个java -jar直接运行的单独的jar包。<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">&lt;plugin&gt;</span><br><span class="line">    &lt;groupId&gt;org.springframework.boot&lt;/groupId&gt;</span><br><span class="line">    &lt;artifactId&gt;spring-boot-maven-plugin&lt;/artifactId&gt;</span><br><span class="line">    &lt;version&gt;1.4.2.RELEASE&lt;/version&gt;</span><br><span class="line">&lt;/plugin&gt;</span><br></pre></td></tr></table></figure></p>
+<p>这种打包方式适合于服务器端打包，可以避免各种配置错误和依赖包缺少及冲突，常用Jenkins+git+maven来做持续集成发布。</p>
+<p>而在某些场景下，想直接在本地打包，再上传到服务器运行，由于jar包通常都是50M以上，需要花费较长的网络传输时间。特别是网络情况不好时，经常上传失败，严重影响工作效率。</p>
+<p>可以用如下maven插件配置，将业务代码和依赖lib库分离，lib目录下的各个依赖包一次上传服务器，后续只需要上传业务代码jar包就行了，不需要每次重复上传依赖包。<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br></pre></td><td class="code"><pre><span class="line">&lt;plugin&gt;</span><br><span class="line">    &lt;groupId&gt;org.apache.maven.plugins&lt;/groupId&gt;</span><br><span class="line">    &lt;artifactId&gt;maven-jar-plugin&lt;/artifactId&gt;</span><br><span class="line">    &lt;configuration&gt;</span><br><span class="line">        &lt;encoding&gt;UTF-8&lt;/encoding&gt;</span><br><span class="line">        &lt;archive&gt;</span><br><span class="line">            &lt;manifest&gt;</span><br><span class="line">                &lt;mainClass&gt;com.xxx.Application&lt;/mainClass&gt;</span><br><span class="line">                &lt;addClasspath&gt;true&lt;/addClasspath&gt;</span><br><span class="line">                &lt;classpathPrefix&gt;lib/&lt;/classpathPrefix&gt;</span><br><span class="line">            &lt;/manifest&gt;</span><br><span class="line">        &lt;/archive&gt;</span><br><span class="line">    &lt;/configuration&gt;</span><br><span class="line">&lt;/plugin&gt;</span><br><span class="line">&lt;plugin&gt;</span><br><span class="line">    &lt;groupId&gt;org.apache.maven.plugins&lt;/groupId&gt;</span><br><span class="line">    &lt;artifactId&gt;maven-dependency-plugin&lt;/artifactId&gt;</span><br><span class="line">    &lt;executions&gt;</span><br><span class="line">        &lt;execution&gt;</span><br><span class="line">            &lt;id&gt;copy-dependencies&lt;/id&gt;</span><br><span class="line">            &lt;phase&gt;package&lt;/phase&gt;</span><br><span class="line">            &lt;goals&gt;</span><br><span class="line">                &lt;goal&gt;copy-dependencies&lt;/goal&gt;</span><br><span class="line">            &lt;/goals&gt;</span><br><span class="line">            &lt;configuration&gt;</span><br><span class="line">                &lt;outputDirectory&gt;$&#123;project.build.directory&#125;/lib&lt;/outputDirectory&gt;</span><br><span class="line">                &lt;overWriteReleases&gt;false&lt;/overWriteReleases&gt;</span><br><span class="line">                &lt;overWriteSnapshots&gt;false&lt;/overWriteSnapshots&gt;</span><br><span class="line">                &lt;overWriteIfNewer&gt;true&lt;/overWriteIfNewer&gt;</span><br><span class="line">            &lt;/configuration&gt;</span><br><span class="line">        &lt;/execution&gt;</span><br><span class="line">    &lt;/executions&gt;</span><br><span class="line">&lt;/plugin&gt;</span><br></pre></td></tr></table></figure></p>
+<p>原理是将各种依赖jar包全部放在lib目录下，然后在业务项目jar包里的META-INF/MANIFEST.MF里自动添加Class-Path路径。用java -jar运行时，可以自动去lib目录下加载依赖jar包。</p>
+<p>项目开发时，通常会有本地环境，测试环境和线上环境，每个环境的配置文件是不一样的。有如下两种解决方法。</p>
+<p>1、在src/main/resources下生成dev、test、production三个目录，分别放入各自配置文件，然后利用profile和resource属性指定。<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line">&lt;profiles&gt;</span><br><span class="line">    &lt;profile&gt;</span><br><span class="line">        &lt;id&gt;production&lt;/id&gt;</span><br><span class="line">        &lt;activation&gt;</span><br><span class="line">            &lt;activeByDefault&gt;true&lt;/activeByDefault&gt;</span><br><span class="line">        &lt;/activation&gt;</span><br><span class="line">        &lt;properties&gt;</span><br><span class="line">            &lt;env&gt;production&lt;/env&gt;</span><br><span class="line">        &lt;/properties&gt;</span><br><span class="line">    &lt;/profile&gt;</span><br><span class="line">    &lt;profile&gt;</span><br><span class="line">        &lt;id&gt;test&lt;/id&gt;</span><br><span class="line">        &lt;properties&gt;</span><br><span class="line">            &lt;env&gt;test&lt;/env&gt;</span><br><span class="line">        &lt;/properties&gt;</span><br><span class="line">    &lt;/profile&gt;</span><br><span class="line">    &lt;profile&gt;</span><br><span class="line">        &lt;id&gt;dev&lt;/id&gt;</span><br><span class="line">        &lt;properties&gt;</span><br><span class="line">            &lt;env&gt;dev&lt;/env&gt;</span><br><span class="line">        &lt;/properties&gt;</span><br><span class="line">    &lt;/profile&gt;</span><br><span class="line">&lt;/profiles&gt;</span><br></pre></td></tr></table></figure></p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line">&lt;resources&gt;</span><br><span class="line">    &lt;resource&gt;</span><br><span class="line">        &lt;directory&gt;src/main/resources/$&#123;env&#125;&lt;/directory&gt;</span><br><span class="line">        &lt;includes&gt;</span><br><span class="line">            &lt;include&gt;**/*.properties&lt;/include&gt;</span><br><span class="line">            &lt;include&gt;**/*.xml&lt;/include&gt;</span><br><span class="line">        &lt;/includes&gt;</span><br><span class="line">    &lt;/resource&gt;</span><br><span class="line">    &lt;resource&gt;</span><br><span class="line">        &lt;directory&gt;src/main/resources&lt;/directory&gt;</span><br><span class="line">        &lt;includes&gt;</span><br><span class="line">            &lt;include&gt;**/*.xml&lt;/include&gt;</span><br><span class="line">            &lt;include&gt;**/*.properties&lt;/include&gt;</span><br><span class="line">        &lt;/includes&gt;</span><br><span class="line">        &lt;excludes&gt;</span><br><span class="line">            &lt;exclude&gt;src/main/resources/META-INF&lt;/exclude&gt;</span><br><span class="line">        &lt;/excludes&gt;</span><br><span class="line">    &lt;/resource&gt;</span><br><span class="line">&lt;/resources&gt;</span><br></pre></td></tr></table></figure>
+<p>配置好后，通过maven的-P参数：mvn package -Pdev、mvn package -Ptest和mvn package -Pproduction，打包不同环境的配置文件。如果不指定-P，则默认是production环境。</p>
+<p>2、配置文件里用${}占位符，利用maven-resources-plugin自动填充。<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br></pre></td><td class="code"><pre><span class="line">application.properties配置：</span><br><span class="line">server.port=$&#123;server.port&#125;</span><br><span class="line"></span><br><span class="line">pom.xml配置：</span><br><span class="line">&lt;plugin&gt;</span><br><span class="line">    &lt;groupId&gt;org.apache.maven.plugins&lt;/groupId&gt;</span><br><span class="line">    &lt;artifactId&gt;maven-resources-plugin&lt;/artifactId&gt;</span><br><span class="line">    &lt;configuration&gt;</span><br><span class="line">        &lt;encoding&gt;UTF-8&lt;/encoding&gt;</span><br><span class="line">        &lt;delimiters&gt;</span><br><span class="line">            &lt;delimiter&gt;$&#123;*&#125;&lt;/delimiter&gt;</span><br><span class="line">        &lt;/delimiters&gt;</span><br><span class="line">        &lt;resources&gt;</span><br><span class="line">            &lt;resource&gt;</span><br><span class="line">                &lt;directory&gt;src/main/resources&lt;/directory&gt;</span><br><span class="line">                &lt;filtering&gt;true&lt;/filtering&gt;</span><br><span class="line">                &lt;includes&gt;</span><br><span class="line">                    &lt;include&gt;*.properties&lt;/include&gt;</span><br><span class="line">                    &lt;include&gt;*.xml&lt;/include&gt;</span><br><span class="line">                &lt;/includes&gt;</span><br><span class="line">            &lt;/resource&gt;</span><br><span class="line">        &lt;/resources&gt;</span><br><span class="line">    &lt;/configuration&gt;</span><br><span class="line">&lt;/plugin&gt;</span><br><span class="line"></span><br><span class="line">&lt;profiles&gt;</span><br><span class="line">    &lt;profile&gt;</span><br><span class="line">        &lt;id&gt;production&lt;/id&gt;</span><br><span class="line">        &lt;activation&gt;</span><br><span class="line">            &lt;activeByDefault&gt;true&lt;/activeByDefault&gt;</span><br><span class="line">        &lt;/activation&gt;</span><br><span class="line">        &lt;properties&gt;</span><br><span class="line">            &lt;server.port&gt;8080&lt;/server.port&gt;</span><br><span class="line">        &lt;/properties&gt;</span><br><span class="line">    &lt;/profile&gt;</span><br><span class="line">    &lt;profile&gt;</span><br><span class="line">        &lt;id&gt;test&lt;/id&gt;</span><br><span class="line">        &lt;properties&gt;</span><br><span class="line">            &lt;server.port&gt;6680&lt;/server.port&gt;</span><br><span class="line">        &lt;/properties&gt;</span><br><span class="line">    &lt;/profile&gt;</span><br><span class="line">    &lt;profile&gt;</span><br><span class="line">        &lt;id&gt;dev&lt;/id&gt;</span><br><span class="line">        &lt;properties&gt;</span><br><span class="line">            &lt;server.port&gt;6688&lt;/server.port&gt;</span><br><span class="line">        &lt;/properties&gt;</span><br><span class="line">    &lt;/profile&gt;</span><br><span class="line">&lt;/profiles&gt;</span><br></pre></td></tr></table></figure></p>
+<p>同样运行maven命令打包：mvn package -Pdev或-Ptest或-Pproduction即可。</p>
+
+      
+    </div>
+    
+    
+    
+
+    
+      <div>
+        <div id="wechat_subscriber" style="display: block; padding: 10px 0; margin: 20px auto; width: 100%; text-align: center">
+    <img id="wechat_subscriber_qcode" src="https://raw.githubusercontent.com/liaorui/liaorui.github.io/master/images/weixin_qrcode.jpg" alt="Liao Rui wechat" style="width: 200px; max-width: 100%;"/>
+    <div>欢迎关注我的微信公众号《技术与生活小站》</div>
+</div>
+
+      </div>
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2018/02/12/Dump1090设备标识/" rel="next" title="Dump1090设备标识">
+                <i class="fa fa-chevron-left"></i> Dump1090设备标识
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+          </div>
+        </div>
+      
+
+      
+      
+
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+
+  
+
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+
+      <section class="site-overview-wrap sidebar-panel sidebar-panel-active">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+            
+              <p class="site-author-name" itemprop="name">Liao Rui</p>
+              <p class="site-description motion-element" itemprop="description">Java</p>
+          </div>
+
+          <nav class="site-state motion-element">
+
+            
+              <div class="site-state-item site-state-posts">
+              
+                <a href="/archives/">
+              
+                  <span class="site-state-item-count">6</span>
+                  <span class="site-state-item-name">日志</span>
+                </a>
+              </div>
+            
+
+            
+
+            
+
+          </nav>
+
+          
+
+          
+
+          
+          
+
+          
+          
+
+          
+
+        </div>
+      </section>
+
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">&copy; <span itemprop="copyrightYear">2018</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Liao Rui</span>
+
+  
+</div>
+
+
+  <div class="powered-by">由 <a class="theme-link" target="_blank" href="https://hexo.io">Hexo</a> 强力驱动</div>
+
+
+
+  <span class="post-meta-divider">|</span>
+
+
+
+  <div class="theme-info">主题 &mdash; <a class="theme-link" target="_blank" href="https://github.com/iissnan/hexo-theme-next">NexT.Muse</a> v5.1.4</div>
+
+
+
+
+        
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+  
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.4"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.4"></script>
+
+
+
+  
+  
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.4"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>
