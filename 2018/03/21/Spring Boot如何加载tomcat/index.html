@@ -1,0 +1,662 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next muse use-motion" lang="zh-Hans">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<meta name="theme-color" content="#222">
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.4" rel="stylesheet" type="text/css" />
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png?v=5.1.4">
+
+
+  <link rel="mask-icon" href="/images/logo.svg?v=5.1.4" color="#222">
+
+
+
+
+
+  <meta name="keywords" content="Hexo, NexT" />
+
+
+
+
+
+
+
+
+
+
+<meta name="description" content="有同事说面试时被问到Spring Boot是如何加载tomcat的，我也是一脸懵逼。特意debug了一下，大致的加载过程如下图所示:  Spring Boot web项目，只需要在pom.xml中引入：1234&amp;lt;dependency&amp;gt;    &amp;lt;groupId&amp;gt;org.springframework.boot&amp;lt;/groupId&amp;gt;    &amp;lt;artifactId">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Spring Boot如何加载tomcat">
+<meta property="og:url" content="http://yoursite.com/2018/03/21/Spring Boot如何加载tomcat/index.html">
+<meta property="og:site_name" content="TechLiving">
+<meta property="og:description" content="有同事说面试时被问到Spring Boot是如何加载tomcat的，我也是一脸懵逼。特意debug了一下，大致的加载过程如下图所示:  Spring Boot web项目，只需要在pom.xml中引入：1234&amp;lt;dependency&amp;gt;    &amp;lt;groupId&amp;gt;org.springframework.boot&amp;lt;/groupId&amp;gt;    &amp;lt;artifactId">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:image" content="http://yoursite.com/images/spring%20boot%20load%20tomcat.png">
+<meta property="og:image" content="http://yoursite.com/images/servletwebserverfactory.png">
+<meta property="og:updated_time" content="2018-03-21T15:31:32.182Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Spring Boot如何加载tomcat">
+<meta name="twitter:description" content="有同事说面试时被问到Spring Boot是如何加载tomcat的，我也是一脸懵逼。特意debug了一下，大致的加载过程如下图所示:  Spring Boot web项目，只需要在pom.xml中引入：1234&amp;lt;dependency&amp;gt;    &amp;lt;groupId&amp;gt;org.springframework.boot&amp;lt;/groupId&amp;gt;    &amp;lt;artifactId">
+<meta name="twitter:image" content="http://yoursite.com/images/spring%20boot%20load%20tomcat.png">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Muse',
+    version: '5.1.4',
+    sidebar: {"position":"left","display":"post","offset":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://yoursite.com/2018/03/21/Spring Boot如何加载tomcat/"/>
+
+
+
+
+
+  <title>Spring Boot如何加载tomcat | TechLiving</title>
+  
+
+
+
+
+
+
+
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">TechLiving</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle">Technology and Life</p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2018/03/21/Spring Boot如何加载tomcat/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="Liao Rui">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="TechLiving">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">Spring Boot如何加载tomcat</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2018-03-21T10:05:44+08:00">
+                2018-03-21
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <p>有同事说面试时被问到Spring Boot是如何加载tomcat的，我也是一脸懵逼。特意debug了一下，大致的加载过程如下图所示:</p>
+<p><img src="/images/spring boot load tomcat.png" alt=""></p>
+<p>Spring Boot web项目，只需要在pom.xml中引入：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">&lt;dependency&gt;</span><br><span class="line">    &lt;groupId&gt;org.springframework.boot&lt;/groupId&gt;</span><br><span class="line">    &lt;artifactId&gt;spring-boot-starter-web&lt;/artifactId&gt;</span><br><span class="line">&lt;/dependency&gt;</span><br></pre></td></tr></table></figure></p>
+<p>在github上看spring-boot-starter-web的pom.xml定义，有如下依赖：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line">&lt;dependency&gt;</span><br><span class="line">	&lt;groupId&gt;org.springframework.boot&lt;/groupId&gt;</span><br><span class="line">	&lt;artifactId&gt;spring-boot-starter-tomcat&lt;/artifactId&gt;</span><br><span class="line">&lt;/dependency&gt;</span><br><span class="line"></span><br><span class="line">......</span><br><span class="line"></span><br><span class="line">&lt;dependency&gt;</span><br><span class="line">	&lt;groupId&gt;org.springframework&lt;/groupId&gt;</span><br><span class="line">	&lt;artifactId&gt;spring-web&lt;/artifactId&gt;</span><br><span class="line">&lt;/dependency&gt;</span><br><span class="line">&lt;dependency&gt;</span><br><span class="line">	&lt;groupId&gt;org.springframework&lt;/groupId&gt;</span><br><span class="line">	&lt;artifactId&gt;spring-webmvc&lt;/artifactId&gt;</span><br><span class="line">&lt;/dependency&gt;</span><br></pre></td></tr></table></figure></p>
+<p>默认加载了tomcat作为web容器。</p>
+<p>我们的应用项目启动入口是：SpringApplication.run(Application.class, args)，其中Application.class是包含main()的主类。跟踪到run()方法里面：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">public ConfigurableApplicationContext run(String... args) &#123;</span><br><span class="line">		......</span><br><span class="line">		context = createApplicationContext(); //</span><br><span class="line">		......</span><br><span class="line">		refreshContext(context);</span><br><span class="line">		......</span><br><span class="line">	&#125;</span><br></pre></td></tr></table></figure></p>
+<p>这里并没有看到启动tomcat的相关代码。程序的层次结构有些深，大量运用了Java多态特性，基于接口编程，我们看到的都是对接口方法的调用，很难知道具体是哪一个子类实现。</p>
+<p>换个思路，从程序运行的log日志里找线索，运行程序，在控制台上找到如下日志：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">......</span><br><span class="line">2018-03-21 10:55:36.413  INFO 8424 --- [           main] ConfigServletWebServerApplicationContext : Refreshing org.springframework.boot.web.servlet.context.AnnotationConfigServletWebServerApplicationContext@77e9807f: startup date [Wed Mar 21 10:55:36 CST 2018]; root of context hierarchy</span><br><span class="line">2018-03-21 10:55:38.847  INFO 8424 --- [           main] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat initialized with port(s): 8080 (http)</span><br><span class="line"></span><br><span class="line">......</span><br></pre></td></tr></table></figure></p>
+<p>第一次出现tomcat信息的log是在TomcatWebServer类里的initialize()方法，于是逆向溯源，向上查找，找到了TomcatServletWebServerFactory.getTomcatWebServer(Tomcat tomcat)调用，又找到TomcatServletWebServerFactory.getWebServer(ServletContextInitializer… initializers)。</p>
+<p>继续向上查找，到了ServletWebServerApplicationContext.createWebServer()方法：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line">private void createWebServer() &#123;</span><br><span class="line">		WebServer webServer = this.webServer;</span><br><span class="line">		ServletContext servletContext = getServletContext();</span><br><span class="line">		if (webServer == null &amp;&amp; servletContext == null) &#123;</span><br><span class="line">			ServletWebServerFactory factory = getWebServerFactory(); // factory得到的具体实现是TomcatServletWebServerFactory</span><br><span class="line">			this.webServer = factory.getWebServer(getSelfInitializer());</span><br><span class="line">		&#125;</span><br><span class="line">		else if (servletContext != null) &#123;</span><br><span class="line">			try &#123;</span><br><span class="line">				getSelfInitializer().onStartup(servletContext);</span><br><span class="line">			&#125;</span><br><span class="line">			catch (ServletException ex) &#123;</span><br><span class="line">				throw new ApplicationContextException(&quot;Cannot initialize servlet context&quot;,</span><br><span class="line">						ex);</span><br><span class="line">			&#125;</span><br><span class="line">		&#125;</span><br><span class="line">		initPropertySources();</span><br><span class="line">	&#125;</span><br></pre></td></tr></table></figure></p>
+<p>进一步看getWebServerFactory()的实现：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line">protected ServletWebServerFactory getWebServerFactory() &#123;</span><br><span class="line">		// Use bean names so that we don&apos;t consider the hierarchy</span><br><span class="line">		String[] beanNames = getBeanFactory()</span><br><span class="line">				.getBeanNamesForType(ServletWebServerFactory.class);  // beanNames数组只有一个元素，且为tomcatServletWebServerFactory</span><br><span class="line">		if (beanNames.length == 0) &#123;</span><br><span class="line">			throw new ApplicationContextException(</span><br><span class="line">					&quot;Unable to start ServletWebServerApplicationContext due to missing &quot;</span><br><span class="line">							+ &quot;ServletWebServerFactory bean.&quot;);</span><br><span class="line">		&#125;</span><br><span class="line">		if (beanNames.length &gt; 1) &#123;</span><br><span class="line">			throw new ApplicationContextException(</span><br><span class="line">					&quot;Unable to start ServletWebServerApplicationContext due to multiple &quot;</span><br><span class="line">							+ &quot;ServletWebServerFactory beans : &quot;</span><br><span class="line">							+ StringUtils.arrayToCommaDelimitedString(beanNames));</span><br><span class="line">		&#125;</span><br><span class="line">		return getBeanFactory().getBean(beanNames[0], ServletWebServerFactory.class);</span><br><span class="line">	&#125;</span><br></pre></td></tr></table></figure></p>
+<p>getBeanFactory()<br>                .getBeanNamesForType(ServletWebServerFactory.class)的实现代码也很复杂，用来从classpath中查找具体哪个容器类（tomcat, jetty，netty或undertow）。</p>
+<p>spring-boot-starter-web默认加载了spring-boot-starter-tomcat，进而加载了tomcat-embed-core，所以这里得到了tomcatServletWebServerFactory，并通过getTomcatWebServer(Tomcat tomcat)实例化TomcatWebServer，最终TomcatWebServer调用initialize()方法完成tomcat.start()调用。</p>
+<p>JettyServletWebServerFactory和UndertowServletWebServerFactory，也继承了AbstractServletWebServerFactory，为何它们没有被getBeanNamesForType(ServletWebServerFactory.class)获取到呢? 查看他们的源码，可以看到分别import了org.eclipse.jetty.*和io.undertow.*，但我们并没有在项目中引入jetty或undertow，所以JettyServletWebServerFactory和UndertowServletWebServerFactory是没办法通过getBeanFactory().getBean(name, ServletWebServerFactory.class)来实例化的。</p>
+<p><img src="/images/servletwebserverfactory.png" alt=""></p>
+<p>如果pom.xml中同时加了tomcat和jetty，beanNames会得到两个元素，元素个数超过1，也会报错：“Unable to start ServletWebServerApplicationContext due to multiple ServletWebServerFactory beans”。</p>
+<p>以上大致分析了spring-boot-starter加载tomcat的过程。spring-boot-starter总共提供了51个常用的库加载，很方便的简化了第三方库的引用和配置，都值得我们应用和学习。</p>
+
+      
+    </div>
+    
+    
+    
+
+    
+      <div>
+        <div id="wechat_subscriber" style="display: block; padding: 10px 0; margin: 20px auto; width: 100%; text-align: center">
+    <img id="wechat_subscriber_qcode" src="https://raw.githubusercontent.com/liaorui/liaorui.github.io/master/images/weixin_qrcode.jpg" alt="Liao Rui wechat" style="width: 200px; max-width: 100%;"/>
+    <div>欢迎关注我的微信公众号《技术与生活小站》</div>
+</div>
+
+      </div>
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2018/03/14/飞机经纬度连线消除锯齿/" rel="next" title="飞机经纬度连线消除锯齿">
+                <i class="fa fa-chevron-left"></i> 飞机经纬度连线消除锯齿
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2018/03/23/EnableEurekaServer注解如何启动Eureka-Server/" rel="prev" title="EnableEurekaServer注解如何启动Eureka Server">
+                EnableEurekaServer注解如何启动Eureka Server <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+
+  
+
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+
+      <section class="site-overview-wrap sidebar-panel sidebar-panel-active">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+            
+              <p class="site-author-name" itemprop="name">Liao Rui</p>
+              <p class="site-description motion-element" itemprop="description">Java</p>
+          </div>
+
+          <nav class="site-state motion-element">
+
+            
+              <div class="site-state-item site-state-posts">
+              
+                <a href="/archives/">
+              
+                  <span class="site-state-item-count">11</span>
+                  <span class="site-state-item-name">日志</span>
+                </a>
+              </div>
+            
+
+            
+
+            
+
+          </nav>
+
+          
+
+          
+
+          
+          
+
+          
+          
+
+          
+
+        </div>
+      </section>
+
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">&copy; <span itemprop="copyrightYear">2018</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Liao Rui</span>
+
+  
+</div>
+
+
+  <div class="powered-by">由 <a class="theme-link" target="_blank" href="https://hexo.io">Hexo</a> 强力驱动</div>
+
+
+
+  <span class="post-meta-divider">|</span>
+
+
+
+  <div class="theme-info">主题 &mdash; <a class="theme-link" target="_blank" href="https://github.com/iissnan/hexo-theme-next">NexT.Muse</a> v5.1.4</div>
+
+
+
+
+        
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+  
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.4"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.4"></script>
+
+
+
+  
+  
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.4"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>

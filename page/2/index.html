@@ -79,19 +79,16 @@
 
 
 
-<meta name="description" content="Thrift是一套高性能、跨语言平台的RPC框架。Thrift可以使用TCP短连接和长连接。在调用量很大时，长连接可以有效避免频繁的TCP创建和连接，相对短连接可以提升性能。如果客户端需要高并发访问服务，单个TCP长连接只能顺序流转数据请求和接收，会严重影响并发性能，所以需要引入连接池。就像数据库连接池一样，一个client和server同时建立多个长连接，同时通讯调用，提升并发性能。   Thr">
-<meta property="og:type" content="article">
-<meta property="og:title" content="Twitter commons thrift pool源码分析">
-<meta property="og:url" content="http://yoursite.com/2018/01/22/Twitter-commons-thrift-pool源码分析/index.html">
+<meta name="description" content="Java">
+<meta property="og:type" content="website">
+<meta property="og:title" content="TechLiving">
+<meta property="og:url" content="http://yoursite.com/page/2/index.html">
 <meta property="og:site_name" content="TechLiving">
-<meta property="og:description" content="Thrift是一套高性能、跨语言平台的RPC框架。Thrift可以使用TCP短连接和长连接。在调用量很大时，长连接可以有效避免频繁的TCP创建和连接，相对短连接可以提升性能。如果客户端需要高并发访问服务，单个TCP长连接只能顺序流转数据请求和接收，会严重影响并发性能，所以需要引入连接池。就像数据库连接池一样，一个client和server同时建立多个长连接，同时通讯调用，提升并发性能。   Thr">
+<meta property="og:description" content="Java">
 <meta property="og:locale" content="zh-Hans">
-<meta property="og:image" content="http://yoursite.com/2018/01/22/Twitter-commons-thrift-pool源码分析/Twitter-commons-thrift-pool源码分析/thrift-pool.png">
-<meta property="og:updated_time" content="2018-01-23T03:55:41.283Z">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:title" content="Twitter commons thrift pool源码分析">
-<meta name="twitter:description" content="Thrift是一套高性能、跨语言平台的RPC框架。Thrift可以使用TCP短连接和长连接。在调用量很大时，长连接可以有效避免频繁的TCP创建和连接，相对短连接可以提升性能。如果客户端需要高并发访问服务，单个TCP长连接只能顺序流转数据请求和接收，会严重影响并发性能，所以需要引入连接池。就像数据库连接池一样，一个client和server同时建立多个长连接，同时通讯调用，提升并发性能。   Thr">
-<meta name="twitter:image" content="http://yoursite.com/2018/01/22/Twitter-commons-thrift-pool源码分析/Twitter-commons-thrift-pool源码分析/thrift-pool.png">
+<meta name="twitter:title" content="TechLiving">
+<meta name="twitter:description" content="Java">
 
 
 
@@ -121,13 +118,13 @@
 
 
 
-  <link rel="canonical" href="http://yoursite.com/2018/01/22/Twitter-commons-thrift-pool源码分析/"/>
+  <link rel="canonical" href="http://yoursite.com/page/2/"/>
 
 
 
 
 
-  <title>Twitter commons thrift pool源码分析 | TechLiving</title>
+  <title>TechLiving</title>
   
 
 
@@ -146,7 +143,8 @@
     
   
 
-  <div class="container sidebar-position-left page-post-detail">
+  <div class="container sidebar-position-left 
+  page-home">
     <div class="headband"></div>
 
     <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
@@ -219,9 +217,9 @@
         <div class="content-wrap">
           <div id="content" class="content">
             
-
-  <div id="posts" class="posts-expand">
+  <section id="posts" class="posts-expand">
     
+      
 
   
 
@@ -251,7 +249,9 @@
 
         
         
-          <h1 class="post-title" itemprop="name headline">Twitter commons thrift pool源码分析</h1>
+          <h1 class="post-title" itemprop="name headline">
+                
+                <a class="post-title-link" href="/2018/01/22/Twitter-commons-thrift-pool源码分析/" itemprop="url">Twitter commons thrift pool源码分析</a></h1>
         
 
         <div class="post-meta">
@@ -301,7 +301,9 @@
       
 
       
-        <p>Thrift是一套高性能、跨语言平台的RPC框架。Thrift可以使用TCP短连接和长连接。在调用量很大时，长连接可以有效避免频繁的TCP创建和连接，相对短连接可以提升性能。如果客户端需要高并发访问服务，单个TCP长连接只能顺序流转数据请求和接收，会严重影响并发性能，所以需要引入连接池。就像数据库连接池一样，一个client和server同时建立多个长连接，同时通讯调用，提升并发性能。  </p>
+        
+          
+            <p>Thrift是一套高性能、跨语言平台的RPC框架。Thrift可以使用TCP短连接和长连接。在调用量很大时，长连接可以有效避免频繁的TCP创建和连接，相对短连接可以提升性能。如果客户端需要高并发访问服务，单个TCP长连接只能顺序流转数据请求和接收，会严重影响并发性能，所以需要引入连接池。就像数据库连接池一样，一个client和server同时建立多个长连接，同时通讯调用，提升并发性能。  </p>
 <p>Thrift本身并没有提供长连接的连接池，常见的做法是用<a href="https://commons.apache.org/proper/commons-pool/" target="_blank" rel="noopener">apache commons-pool</a>实现自己的Object连接池。本文将介绍<a href="https://github.com/twitter/commons" target="_blank" rel="noopener">twitter commons</a>包里提供的thrift连接池，并简要分析一下其源码实现方式。  </p>
 <p>Twitter commons thrift主要提供了ThriftFactory<t>和Thrift<t>两个类。ThriftFactory<t>用工厂模式创建Thrift<t>，然后再通过Thrift<t>内部类ClientBuilder生成具体的thrift业务接口桩。类的关系图大致如下：</t></t></t></t></t></p>
 <p><img src="Twitter-commons-thrift-pool源码分析/thrift-pool.png" alt=""></p>
@@ -319,20 +321,14 @@
 <p>总得来说，twitter commons的thrift连接池采用的是Java动态代理和反射技术，动态生成业务实现类。</p>
 <p>作为一个连接池，是如何缓存对象，如何管理连接数的，后续文章再作分析。</p>
 
+          
+        
       
     </div>
     
     
     
 
-    
-      <div>
-        <div id="wechat_subscriber" style="display: block; padding: 10px 0; margin: 20px auto; width: 100%; text-align: center">
-    <img id="wechat_subscriber_qcode" src="https://raw.githubusercontent.com/liaorui/liaorui.github.io/master/images/weixin_qrcode.jpg" alt="Liao Rui wechat" style="width: 200px; max-width: 100%;"/>
-    <div>欢迎关注我的微信公众号《技术与生活小站》</div>
-</div>
-
-      </div>
     
 
     
@@ -343,28 +339,12 @@
       
 
       
-      
+
       
 
       
-        <div class="post-nav">
-          <div class="post-nav-next post-nav-item">
-            
-          </div>
-
-          <span class="post-nav-divider"></span>
-
-          <div class="post-nav-prev post-nav-item">
-            
-              <a href="/2018/01/27/ElasticSearch同步数据库/" rel="prev" title="ElasticSearch同步数据库">
-                ElasticSearch同步数据库 <i class="fa fa-chevron-right"></i>
-              </a>
-            
-          </div>
-        </div>
       
-
-      
+        <div class="post-eof"></div>
       
 
     </footer>
@@ -375,11 +355,14 @@
   </article>
 
 
+    
+  </section>
 
-    <div class="post-spread">
-      
-    </div>
-  </div>
+  
+  <nav class="pagination">
+    <a class="extend prev" rel="prev" href="/"><i class="fa fa-angle-left"></i></a><a class="page-number" href="/">1</a><span class="page-number current">2</span>
+  </nav>
+
 
 
           </div>
@@ -387,10 +370,6 @@
 
 
           
-
-  
-
-
 
         </div>
         
@@ -587,10 +566,6 @@
   
 
   
-  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.4"></script>
-<script type="text/javascript" src="/js/src/post-details.js?v=5.1.4"></script>
-
-
 
   
 

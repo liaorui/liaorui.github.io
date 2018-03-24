@@ -86,13 +86,13 @@
 <meta property="og:site_name" content="TechLiving">
 <meta property="og:description" content="很多人问我，你们搞航班的数据从哪来的？我说花钱买，网上爬，装ADS-B设备收。这里简单介绍一下ADS-B。 先看一下维基百科的介绍：123456Automatic dependent surveillance – broadcast (ADS–B) is a surveillance technology in which an aircraft determines its position v">
 <meta property="og:locale" content="zh-Hans">
-<meta property="og:image" content="http://yoursite.com/2018/02/02/ADS-B简介/adsb.jpg">
-<meta property="og:image" content="http://yoursite.com/2018/02/02/ADS-B简介/assembled.jpg">
+<meta property="og:image" content="http://yoursite.com/2018/02/02/ADS-B简介/ADS-B简介/adsb.jpg">
+<meta property="og:image" content="http://yoursite.com/2018/02/02/ADS-B简介/ADS-B简介/assembled.jpg">
 <meta property="og:updated_time" content="2018-02-02T02:11:51.606Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="ADS-B简介">
 <meta name="twitter:description" content="很多人问我，你们搞航班的数据从哪来的？我说花钱买，网上爬，装ADS-B设备收。这里简单介绍一下ADS-B。 先看一下维基百科的介绍：123456Automatic dependent surveillance – broadcast (ADS–B) is a surveillance technology in which an aircraft determines its position v">
-<meta name="twitter:image" content="http://yoursite.com/2018/02/02/ADS-B简介/adsb.jpg">
+<meta name="twitter:image" content="http://yoursite.com/2018/02/02/ADS-B简介/ADS-B简介/adsb.jpg">
 
 
 
@@ -308,12 +308,12 @@
 <p>再简要的说，ADS-B就是自动报告飞机的位置（包括经纬度、高度、速度、航向、应答机编码、机尾号等），并不断向地面广播。我们在地面上装一个设备，接收这个广播就行了，就跟听收音机一样。</p>
 <p>那么是不是所有的飞机都会向外发送ADS-B广播呢？目前最大的民用客机波音和空客基本上都有ADS-B设备，咱们自己的国产大飞机C919也支持ADS-B，但一些专飞支线的飞机像庞巴迪CRJ900等还不支持。从市场份额来看，目前全球和中国的90%以上的民用飞机都支持ADS-B了。FAA也在推动ADS-B成为下一代飞机位置监控的标准，并取代昂贵的雷达系统。可以认为未来所有的民用飞机都会支持ADS-B。</p>
 <p>ADS-B在国外发展的如火如荼，也催生了一批专业提供ADS-B数据的公司，如Flightradar24、AirNav等。<br>他们在全球部署receiver，组装成一个全球的设备网络，全球的飞机基本都有监控到。</p>
-<p><img src="/2018/02/02/ADS-B简介/adsb.jpg" alt=""></p>
+<p><img src="ADS-B简介/adsb.jpg" alt=""></p>
 <center>From flightradar24</center>
 
 
 <p>更重要的是，一大批航空爱好者也加入进来。如果你是个航空爱好者，酷爱DIY，只要有一个<a href="https://www.raspberrypi.org" target="_blank" rel="noopener">Raspberry Pi</a>开发板，刷上软件，再插上一根天线，就能在自家院子里收天上飞机的位置信号，这简直太酷了。给个传送门，就像这样玩：<a href="https://github.com/openskynetwork/raspberry-pi-adsb" target="_blank" rel="noopener">raspberry-pi-adsb</a>。某宝上也有卖哦~</p>
-<p><img src="/2018/02/02/ADS-B简介/assembled.jpg" alt=""></p>
+<p><img src="ADS-B简介/assembled.jpg" alt=""></p>
 <p>ADS-B广播唯一的缺点是穿透性太差，很容易受到大山和高楼建筑物的遮挡，所以recever必须部署在空旷的位置，比如楼顶。如果需要把数据共享到互联网上，还需要稳定的网络。有很多全球爱好者一起组成的大型ADS-B网络，共享彼此的数据，独乐乐不如众乐乐。</p>
 <p>有ADS-B receiver设备后，还要刷软件，把天线收到的1090频率的数据进行解析，转化成我们能理解的数据，比如：经纬度、高度、速度、航向、应答机编码、机尾号等。有大神把这一套软件也提供了：<a href="https://github.com/MalcolmRobb/dump1090" target="_blank" rel="noopener">dump1090</a>。</p>
 <p>刷了dump1090后，解析出来的数据格式是这样的：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">&#123;&quot;hex&quot;:&quot;780e21&quot;, &quot;squawk&quot;:&quot;3076&quot;, &quot;flight&quot;:&quot;CCA953&quot;, &quot;lat&quot;:38.711258, &quot;lon&quot;:119.635315, &quot;validposition&quot;:1, &quot;altitude&quot;:20700,  &quot;vert_rate&quot;:0,&quot;track&quot;:101, &quot;validtrack&quot;:1,&quot;speed&quot;:417, &quot;messages&quot;:155, &quot;seen&quot;:1,&quot;validground&quot;:0&#125;</span><br></pre></td></tr></table></figure></p>
@@ -437,7 +437,7 @@
               
                 <a href="/archives/">
               
-                  <span class="site-state-item-count">9</span>
+                  <span class="site-state-item-count">11</span>
                   <span class="site-state-item-name">日志</span>
                 </a>
               </div>

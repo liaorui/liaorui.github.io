@@ -86,12 +86,12 @@
 <meta property="og:site_name" content="TechLiving">
 <meta property="og:description" content="一个良好的爬虫框架需要具备以下特性：1、用大量的代理IP突破IP封锁。2、灵活的http头信息和Get/Post参数设置，应对http头信息里cookie、user-agent甚至是自定义头信息的加密认证。3、方便的抓取任务调度，多级页面抓取，后面层级页面依赖于前面层级页面的解析参数。4、爬取失败后的自动重试。 本文探讨一种RxJava和Retrofit搭建的抓取框架，从上述几个角度分析这套方案是">
 <meta property="og:locale" content="zh-Hans">
-<meta property="og:image" content="http://yoursite.com/2018/01/31/基于Rxjava-Retrofit的爬虫框架/map_operator.png">
+<meta property="og:image" content="http://yoursite.com/2018/01/31/基于Rxjava-Retrofit的爬虫框架/基于Rxjava-Retrofit的爬虫框架/map_operator.png">
 <meta property="og:updated_time" content="2018-01-31T04:50:12.575Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="基于RxJava+Retrofit的爬虫框架">
 <meta name="twitter:description" content="一个良好的爬虫框架需要具备以下特性：1、用大量的代理IP突破IP封锁。2、灵活的http头信息和Get/Post参数设置，应对http头信息里cookie、user-agent甚至是自定义头信息的加密认证。3、方便的抓取任务调度，多级页面抓取，后面层级页面依赖于前面层级页面的解析参数。4、爬取失败后的自动重试。 本文探讨一种RxJava和Retrofit搭建的抓取框架，从上述几个角度分析这套方案是">
-<meta name="twitter:image" content="http://yoursite.com/2018/01/31/基于Rxjava-Retrofit的爬虫框架/map_operator.png">
+<meta name="twitter:image" content="http://yoursite.com/2018/01/31/基于Rxjava-Retrofit的爬虫框架/基于Rxjava-Retrofit的爬虫框架/map_operator.png">
 
 
 
@@ -307,7 +307,7 @@
 <p>即：用可观察的序列来组装异步和事件驱动的库，适用于Java JVM之上。</p>
 <p>RxJava是<a href="http://reactivex.io" target="_blank" rel="noopener">ReactiveX</a>的Java版本实现，还有javascript、c++、python、go等各种语言实现。ReactiveX定义了map、flatmap等各类发射器，还有filter、first、last等各种过滤器。也有merge、zip、average、count、max、min、sum等组装操作，并支持错误事件的处理。RxJava构建在ReactiveX之上，当然也是支持的。</p>
 <p>RxJava最明显的两个特点是：异步和基于事件流。基于事件流，形象地讲就是数据在一根管子里流动，经过操作（数据过滤、数据变换等）后，到另外一根管子里继续流动。数据就是在很多个管子里被筛选和流动，我们只关心最后一根管子里流出来的数据，就是我们想要的结果。这一切都是异步的。</p>
-<p>RxJava map操作示意图<br><img src="/2018/01/31/基于Rxjava-Retrofit的爬虫框架/map_operator.png" alt=""></p>
+<p>RxJava map操作示意图<br><img src="基于Rxjava-Retrofit的爬虫框架/map_operator.png" alt=""></p>
 <p>异步特性符合爬虫框架的基本要求。当需要投放大量的抓取任务时，异步特性可以保证任务投放是连续的且固定频率的。如果多线程请求因为网络超时大量阻塞了，任务都下达不了，肯定抓不完了。</p>
 <p>基于事件流的特性正好用于多级页面抓取时的任务调度。常规的异步请求，都是基于回调的，但callback is evil，在多级页面抓取时，必须导致回调里再回调，不断的嵌套回调。如果再加上失败重试逻辑，代码简直让人崩溃。</p>
 <p>当失败了，框架需要自动重新发送请求。RxJava在网络超时后，会收到Throwable事件，利用它的retry特性在收到Throwable事件后继续网络请求。</p>
@@ -435,7 +435,7 @@
               
                 <a href="/archives/">
               
-                  <span class="site-state-item-count">9</span>
+                  <span class="site-state-item-count">11</span>
                   <span class="site-state-item-name">日志</span>
                 </a>
               </div>
