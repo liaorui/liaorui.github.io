@@ -79,17 +79,17 @@
 
 
 
-<meta name="description" content="Scala是构建在JVM上的函数式编程语言，在大数据领域开始展现出独特的优势，Kafka，Spark，Flink组件等都是用Scala开发的。而在web开发领域，Play Framework是最优秀的Scala响应式编程web框架。 Play Framework支持Slick和Anorm两种方式操作数据库。Slick支持Functional Relational Mapping (FRM)的访问方">
+<meta name="description" content="最近需要将Python应用程序部署上线，而用户现场的服务器基于安全原因，是不能访问外网的。Python需要访问Postgresql、Hive和ElasticSearch，需要psycopg2-binary、pyhs2、elasticsearch等插件。在测试环境下，通过pip install就能解决，但纯内网环境下，pip失去了作用。 pyhs2还依赖于cyrus-sasl-devel，有网情况下">
 <meta property="og:type" content="article">
-<meta property="og:title" content="Play Framework Anorm返回class对象">
-<meta property="og:url" content="http://yoursite.com/2018/03/04/Play-Framework-Anorm返回class对象/index.html">
+<meta property="og:title" content="Docker构建Python应用镜像">
+<meta property="og:url" content="http://yoursite.com/2018/03/29/Docker构建Python应用镜像/index.html">
 <meta property="og:site_name" content="TechLiving">
-<meta property="og:description" content="Scala是构建在JVM上的函数式编程语言，在大数据领域开始展现出独特的优势，Kafka，Spark，Flink组件等都是用Scala开发的。而在web开发领域，Play Framework是最优秀的Scala响应式编程web框架。 Play Framework支持Slick和Anorm两种方式操作数据库。Slick支持Functional Relational Mapping (FRM)的访问方">
+<meta property="og:description" content="最近需要将Python应用程序部署上线，而用户现场的服务器基于安全原因，是不能访问外网的。Python需要访问Postgresql、Hive和ElasticSearch，需要psycopg2-binary、pyhs2、elasticsearch等插件。在测试环境下，通过pip install就能解决，但纯内网环境下，pip失去了作用。 pyhs2还依赖于cyrus-sasl-devel，有网情况下">
 <meta property="og:locale" content="zh-Hans">
-<meta property="og:updated_time" content="2018-03-04T10:12:01.708Z">
+<meta property="og:updated_time" content="2018-03-29T07:24:31.438Z">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:title" content="Play Framework Anorm返回class对象">
-<meta name="twitter:description" content="Scala是构建在JVM上的函数式编程语言，在大数据领域开始展现出独特的优势，Kafka，Spark，Flink组件等都是用Scala开发的。而在web开发领域，Play Framework是最优秀的Scala响应式编程web框架。 Play Framework支持Slick和Anorm两种方式操作数据库。Slick支持Functional Relational Mapping (FRM)的访问方">
+<meta name="twitter:title" content="Docker构建Python应用镜像">
+<meta name="twitter:description" content="最近需要将Python应用程序部署上线，而用户现场的服务器基于安全原因，是不能访问外网的。Python需要访问Postgresql、Hive和ElasticSearch，需要psycopg2-binary、pyhs2、elasticsearch等插件。在测试环境下，通过pip install就能解决，但纯内网环境下，pip失去了作用。 pyhs2还依赖于cyrus-sasl-devel，有网情况下">
 
 
 
@@ -119,13 +119,13 @@
 
 
 
-  <link rel="canonical" href="http://yoursite.com/2018/03/04/Play-Framework-Anorm返回class对象/"/>
+  <link rel="canonical" href="http://yoursite.com/2018/03/29/Docker构建Python应用镜像/"/>
 
 
 
 
 
-  <title>Play Framework Anorm返回class对象 | TechLiving</title>
+  <title>Docker构建Python应用镜像 | TechLiving</title>
   
 
 
@@ -232,7 +232,7 @@
   
   
   <div class="post-block">
-    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2018/03/04/Play-Framework-Anorm返回class对象/">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2018/03/29/Docker构建Python应用镜像/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="name" content="Liao Rui">
@@ -249,7 +249,7 @@
 
         
         
-          <h1 class="post-title" itemprop="name headline">Play Framework Anorm返回class对象</h1>
+          <h1 class="post-title" itemprop="name headline">Docker构建Python应用镜像</h1>
         
 
         <div class="post-meta">
@@ -261,8 +261,8 @@
               
                 <span class="post-meta-item-text">发表于</span>
               
-              <time title="创建于" itemprop="dateCreated datePublished" datetime="2018-03-04T17:42:08+08:00">
-                2018-03-04
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2018-03-29T14:35:51+08:00">
+                2018-03-29
               </time>
             
 
@@ -299,11 +299,26 @@
       
 
       
-        <p>Scala是构建在JVM上的函数式编程语言，在大数据领域开始展现出独特的优势，Kafka，Spark，Flink组件等都是用Scala开发的。而在web开发领域，<a href="https://github.com/playframework/playframework" target="_blank" rel="noopener">Play Framework</a>是最优秀的Scala响应式编程web框架。</p>
-<p>Play Framework支持Slick和Anorm两种方式操作数据库。Slick支持Functional Relational Mapping (FRM)的访问方式，类似于Java平台的ORM。Anorm相对Slick更简单，直接用SQL语句交互，并提供了结果集的类型转换。</p>
-<p>Anorm如何将查询结果转换成Scala case class对象，<a href="https://www.playframework.com/documentation/2.6.x/ScalaAnorm#Generated-parsers" target="_blank" rel="noopener">官方文档</a>介绍的不是很详细，用了Macro.namedParser，宏定义导致语法错误没办法被IDE编译阶段发现，给开发调度带来不便。<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">val parser: RowParser[Info] = Macro.parser[Info](&quot;a_name&quot;, &quot;creation&quot;)</span><br><span class="line">/* Generated as:</span><br><span class="line">get[String](&quot;a_name&quot;) ~ get[Option[Int]](&quot;creation&quot;) map &#123;</span><br><span class="line">  case name ~ year =&gt; Info(name, year)</span><br><span class="line">&#125;</span><br><span class="line">*/</span><br></pre></td></tr></table></figure></p>
-<p>其实可以直接去掉Macro.parser，用以下语法：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">val parser: RowParser[Info] = get[String](&quot;a_name&quot;) ~ get[Option[Int]](&quot;creation&quot;) map &#123;</span><br><span class="line">  case name ~ year =&gt; Info(name, year)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
-<p>这样也方便在map里对name和year做数据转换，例如对year进行日期格式化或加减天数，而在上面的宏定义语法里是没办法支持的。</p>
+        <p>最近需要将Python应用程序部署上线，而用户现场的服务器基于安全原因，是不能访问外网的。Python需要访问Postgresql、Hive和ElasticSearch，需要psycopg2-binary、pyhs2、elasticsearch等插件。在测试环境下，通过pip install就能解决，但纯内网环境下，pip失去了作用。</p>
+<p>pyhs2还依赖于cyrus-sasl-devel，有网情况下是通过yum install安装并自动解决rpm包的依赖问题的。另外，nginx、openssl都需要在线内网环境下安装，并且客户机上没有gcc和gcc-c++。</p>
+<p>我们一开始是手工下载各类rpm包，然后rpm -ivh手工安装，很快就陷入了万恶的rpm无限依赖。等最后装上这些环境时，相关rpm依赖包达到了50个以上，非常痛苦。</p>
+<p>尝试用docker解决这些依赖包问题，期望将Python程序运行需要的rpm和pip插件全部打包成一个镜像，然后在客户机上，直接导入镜像，方便运行。网上关于docker的教程已经很好了，但还是再做一下记录，以备将来之需。</p>
+<p>先在测试环境搭一套docker，然后在公共仓库下载一个linux环境。可以根据用户现场的服务器版本，下载对应的linux镜像。我们将在这个镜像的基础上，加入各种依赖文件。这个测试环境，必须是有网的。Docker现在支持Linux, Mac OS, Windows，基于覆盖了常用的各种桌面PC。<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">docker pull centos:7.2.1511</span><br></pre></td></tr></table></figure></p>
+<p>下载完成后，通过 docker images 查看镜像已经在我们本地了。<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">REPOSITORY      TAG             IMAGE ID            CREATED             SIZE</span><br><span class="line">centos          7.2.1511        0a2bad7da9b5        4 months ago        195MB</span><br></pre></td></tr></table></figure></p>
+<p>启动CentOS，只需要进入bash环境即可：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">docker run -p 8001:8001 -ti &lt;IMAGE ID&gt; /bin/bash</span><br></pre></td></tr></table></figure></p>
+<p>IMAGE ID通过docker images查看，只需要输入前4位即可，docker会自动识别。比如上面的IMAGE ID是0a2b。<br>-p参数是将docker的8001端口映射到宿主机的8001端口上，这样就可以在本地机器上通过8001端口直接访问Python程序的接口服务。<br>更多参数通过 docker run –help 来查看。</p>
+<p>接下来，    就可以像在物理机一样操作：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">yum -y install gcc</span><br><span class="line">yum -y install gcc-c++</span><br><span class="line">yum -y install python-devel</span><br><span class="line">yum -y install cyrus-sasl-devel</span><br><span class="line"></span><br><span class="line">curl https://bootstrap.pypa.io/get-pip.py | python</span><br><span class="line">pip install flask</span><br><span class="line">pip install pyhs2</span><br><span class="line">pip install psycopg2-binary</span><br><span class="line">pip install elasticsearch</span><br><span class="line">pip install pyyaml</span><br><span class="line">pip install requests</span><br></pre></td></tr></table></figure></p>
+<p>装好Python环境后，需要将Python程序复制到镜像里面，新开一个终端，运行：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">docker cp python_app &lt;CONTAINER ID&gt;:/root</span><br></pre></td></tr></table></figure></p>
+<p>CONTAINER ID在 docker ps 中看。只需要输入前4位即可，docker会自动识别。</p>
+<p>最后，启动Python程序即可。</p>
+<p>如果上述步骤都成功了，就可以将当前正在运行的docker容器保存为镜像。<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">docker commit &lt;CONTAINER ID&gt; py_docker</span><br></pre></td></tr></table></figure></p>
+<p>再通过 docker images 查看是否存在py_docker。</p>
+<p>这个py_docker就是一个完整的Python运行环境，包含了所有的相关依赖。</p>
+<p>通过以下命令将镜像导出来：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">docker save py_docker &gt; py_docker</span><br></pre></td></tr></table></figure></p>
+<p>现在我们拿到这个镜像文件了，带到客户现场去，直接导入客户机上：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">docker load &lt; py_docker</span><br></pre></td></tr></table></figure></p>
+<p>用以下命令来启动：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">docker run -p 8001:8001 -ti py_docker</span><br></pre></td></tr></table></figure></p>
+<p>通过这些简单的步骤，就解决了在内网环境下，安装Python或其他应用环境所面临的复杂的依赖包。</p>
+<p>如果服务器上连docker也没有，就需要先安装docker。其实docker本身通过rpm安装，也是一堆的依赖。下一篇文章将介绍yum离线仓库的构建方法，将docker依赖的rpm全部离线下载，然后拷到客户机上，本地安装。当docker装上后，后面的各种开发环境和应用环境就好解决了，微服务和应用隔离，就可以快乐的实施了。</p>
 
       
     </div>
@@ -336,8 +351,8 @@
         <div class="post-nav">
           <div class="post-nav-next post-nav-item">
             
-              <a href="/2018/02/25/Spring-Boot项目maven打包方式总结/" rel="next" title="Spring Boot项目maven打包方式总结">
-                <i class="fa fa-chevron-left"></i> Spring Boot项目maven打包方式总结
+              <a href="/2018/03/23/EnableEurekaServer注解如何启动Eureka-Server/" rel="next" title="EnableEurekaServer注解如何启动Eureka Server">
+                <i class="fa fa-chevron-left"></i> EnableEurekaServer注解如何启动Eureka Server
               </a>
             
           </div>
@@ -345,10 +360,6 @@
           <span class="post-nav-divider"></span>
 
           <div class="post-nav-prev post-nav-item">
-            
-              <a href="/2018/03/09/最长上升子序列LIS判断飞机高度的变化趋势/" rel="prev" title="最长上升子序列LIS判断飞机高度的变化趋势">
-                最长上升子序列LIS判断飞机高度的变化趋势 <i class="fa fa-chevron-right"></i>
-              </a>
             
           </div>
         </div>
