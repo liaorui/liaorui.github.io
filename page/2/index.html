@@ -232,6 +232,147 @@
   
   
   <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2018/01/31/基于Rxjava-Retrofit的爬虫框架/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="Liao Rui">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="TechLiving">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">
+                
+                <a class="post-title-link" href="/2018/01/31/基于Rxjava-Retrofit的爬虫框架/" itemprop="url">基于RxJava+Retrofit的爬虫框架</a></h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2018-01-31T08:27:23+08:00">
+                2018-01-31
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        
+          
+            <p>一个良好的爬虫框架需要具备以下特性：<br>1、用大量的代理IP突破IP封锁。<br>2、灵活的http头信息和Get/Post参数设置，应对http头信息里cookie、user-agent甚至是自定义头信息的加密认证。<br>3、方便的抓取任务调度，多级页面抓取，后面层级页面依赖于前面层级页面的解析参数。<br>4、爬取失败后的自动重试。</p>
+<p>本文探讨一种RxJava和Retrofit搭建的抓取框架，从上述几个角度分析这套方案是否具备实际可用性。</p>
+<p><a href="https://github.com/ReactiveX/RxJava" target="_blank" rel="noopener">RxJava</a>在github上的介绍是:<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">a library for composing asynchronous and event-based programs using observable sequences for the Java VM.</span><br></pre></td></tr></table></figure></p>
+<p>即：用可观察的序列来组装异步和事件驱动的库，适用于Java JVM之上。</p>
+<p>RxJava是<a href="http://reactivex.io" target="_blank" rel="noopener">ReactiveX</a>的Java版本实现，还有javascript、c++、python、go等各种语言实现。ReactiveX定义了map、flatmap等各类发射器，还有filter、first、last等各种过滤器。也有merge、zip、average、count、max、min、sum等组装操作，并支持错误事件的处理。RxJava构建在ReactiveX之上，当然也是支持的。</p>
+<p>RxJava最明显的两个特点是：异步和基于事件流。基于事件流，形象地讲就是数据在一根管子里流动，经过操作（数据过滤、数据变换等）后，到另外一根管子里继续流动。数据就是在很多个管子里被筛选和流动，我们只关心最后一根管子里流出来的数据，就是我们想要的结果。这一切都是异步的。</p>
+<p>RxJava map操作示意图<br><img src="基于Rxjava-Retrofit的爬虫框架/map_operator.png" alt=""></p>
+<p>异步特性符合爬虫框架的基本要求。当需要投放大量的抓取任务时，异步特性可以保证任务投放是连续的且固定频率的。如果多线程请求因为网络超时大量阻塞了，任务都下达不了，肯定抓不完了。</p>
+<p>基于事件流的特性正好用于多级页面抓取时的任务调度。常规的异步请求，都是基于回调的，但callback is evil，在多级页面抓取时，必须导致回调里再回调，不断的嵌套回调。如果再加上失败重试逻辑，代码简直让人崩溃。</p>
+<p>当失败了，框架需要自动重新发送请求。RxJava在网络超时后，会收到Throwable事件，利用它的retry特性在收到Throwable事件后继续网络请求。</p>
+<p>关键代码为：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br></pre></td><td class="code"><pre><span class="line">Observable.range(1, days) // 循环抓取多少天</span><br><span class="line">    .flatMap(it -&gt; Observable.fromArray(routeList.toArray())</span><br><span class="line">        .map(route -&gt; &#123;  // 每个航线都和这个日期组合</span><br><span class="line">            String date = new DateTime().plusDays(it).toString(&quot;yyyy-MM-dd&quot;) ;</span><br><span class="line">            return new String[] &#123; route[0], route[1], date &#125;;</span><br><span class="line">        &#125;))</span><br><span class="line">    .flatMap(route -&gt; Observable.create(subscriber -&gt; &#123;</span><br><span class="line">            Retrofit retrofit = retrBuilder.client(getOkHttpClient()).build();</span><br><span class="line">            ChunqiuService service = retrofit.create(ChunqiuService.class);</span><br><span class="line">            //...</span><br><span class="line">            Call&lt;String&gt; call = service.query(referer, userAgent, route[0], route[1], route[2], 0, 1, &quot;null&quot;, &quot;false&quot;, &quot;false&quot;, &quot;false&quot;, &quot;false&quot;, 1, 0, &quot;false&quot;);</span><br><span class="line">            try &#123;</span><br><span class="line">                Response&lt;String&gt; res = call.execute();</span><br><span class="line">                subscriber.onNext(res.body());</span><br><span class="line">            &#125; catch (Exception ex) &#123;    </span><br><span class="line">                //网络超时后捕获异常，onError事件往后发射</span><br><span class="line">                subscriber.onError(ex);</span><br><span class="line">            &#125;</span><br><span class="line">            subscriber.onComplete();</span><br><span class="line">        &#125;).retryWhen(errors -&gt; errors   //收到onError发射的事件，进行重试</span><br><span class="line">            .flatMap(e -&gt; &#123;</span><br><span class="line">                e.printStackTrace();</span><br><span class="line">                return Observable.just(e);</span><br><span class="line">            &#125;)</span><br><span class="line">            .zipWith(Observable.range(1, 3), (n, i) -&gt; i)   //重试3次</span><br><span class="line">                .flatMap(retryCount -&gt; &#123;</span><br><span class="line">                    System.out.println(String.format(&quot;retry %s,%s,%s&quot;, route[0], route[1], route[2]));</span><br><span class="line">                    // 暂停200毫秒后再重试</span><br><span class="line">                    return Observable.timer(200, TimeUnit.MILLISECONDS); </span><br><span class="line">                &#125;)</span><br><span class="line">        )</span><br><span class="line">        .subscribeOn(Schedulers.io()) //在IO线程上执行,不阻塞主线程</span><br><span class="line">    )</span><br></pre></td></tr></table></figure></p>
+<p>上面的flatMap是事件调度的关键，可以将输入数据route转换成一个Observable，然后在Observable里定义各种网络操作和业务逻辑操作。如果是多层级的页面抓取，就用多个flatMap。flatMap之间的数据是从上往下依次流转的。而这些都是异步的。</p>
+<p>因此RxJava可以解决抓取任务调度和失败自动重试的问题。</p>
+<p><a href="http://square.github.io/retrofit/" target="_blank" rel="noopener">Retrofit</a>是基于Java接口来配置的网络请求框架。我们只需要定义好请求的baseurl，请求头和请求参数，Retrofit会自动帮我们拿回数据，不用关心网络请求细节。实际上，Retrofit底层就是用okhttp来管理网络请求的。</p>
+<p>代码如下：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">public interface ChunqiuService &#123;</span><br><span class="line"></span><br><span class="line">    @FormUrlEncoded</span><br><span class="line">    @POST(&quot;Flights/SearchByTime&quot;)</span><br><span class="line">    Call&lt;String&gt; query(@Header(&quot;Referer&quot;) String referer, @Header(&quot;User-Agent&quot;) String userAgent,</span><br><span class="line">            @Field(&quot;Departure&quot;) String departure, @Field(&quot;Arrival&quot;) String arrival, </span><br><span class="line">            @Field(&quot;DepartureDate&quot;) String departureDate);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>这个接口类表明是用Post请求方式，url是Flights/SearchByTime，头参数分别是referer和userAgent，retrofit会自动映射成Referer和User-Agent，并设置到http请求头中。Post包体参数有departure、arrival和departureDate，并分别映射成Field标签标记的名称。</p>
+<p>业务代码里调用：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">Retrofit retrofit = retrBuilder.client(getOkHttpClient()).build();</span><br><span class="line">ChunqiuService service = retrofit.create(ChunqiuService.class);</span><br><span class="line">//... 这里设置referer和userAgent</span><br><span class="line">Call&lt;String&gt; call = service.query(referer, userAgent, route[0], route[1], route[2], 0, 1, &quot;null&quot;, &quot;false&quot;, &quot;false&quot;, &quot;false&quot;, &quot;false&quot;, 1, 0, &quot;false&quot;);</span><br><span class="line"></span><br><span class="line">Response&lt;String&gt; res = call.execute();</span><br></pre></td></tr></table></figure></p>
+<p>基于接口声明式的定义，来配置网络请求，很清晰。但存在一个问题：如果网站有改版，基本Java接口定义的配置需要改代码，并重启Java程序。因此可以进一步抽象接口，把url，header，params都作为入参传到方法里，然后用json或spring xml配置具体的值，做到不用改Java代码，甚至动态加载配置文件而不用重启Java程序。<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">public interface RequestService &#123;</span><br><span class="line">    @Get</span><br><span class="line">    Call&lt;String&gt; queryGet(@Url String url, @HeaderMap Map&lt;String, String&gt; headers, @QueryMap Map&lt;String, String&gt; fields);</span><br><span class="line"></span><br><span class="line">    @Post</span><br><span class="line">    Call&lt;String&gt; queryPost(@Url String url, @HeaderMap Map&lt;String, String&gt; headers, @FieldMap Map&lt;String, String&gt; fields);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>Retrofit基本能解决网络请求的灵活配置问题。</p>
+<p>最后是代理IP的问题，可以从网上收集公开免费的代理网站，加入到自己的代码库里，并定时校验。另外，也有一些收费的代理网站，直接提供了接口，方便定制开发，一次性获取很多代理IP，收费从几十到几百不等，基本能满足对代理IP的需求了。</p>
+<p><b>Talk is cheap. Show me the code.<br><a href="https://github.com/liaorui/rx-demo" target="_blank" rel="noopener">rx-demo</a></b></p>
+
+          
+        
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+
+      
+
+      
+
+      
+      
+        <div class="post-eof"></div>
+      
+
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+    
+      
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
     <link itemprop="mainEntityOfPage" href="http://yoursite.com/2018/01/27/ElasticSearch同步数据库/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -546,7 +687,7 @@
               
                 <a href="/archives/">
               
-                  <span class="site-state-item-count">12</span>
+                  <span class="site-state-item-count">13</span>
                   <span class="site-state-item-name">日志</span>
                 </a>
               </div>
