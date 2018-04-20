@@ -86,13 +86,13 @@
 <meta property="og:site_name" content="TechLiving">
 <meta property="og:description" content="有同事说面试时被问到Spring Boot是如何加载tomcat的，我也是一脸懵逼。特意debug了一下，大致的加载过程如下图所示:  Spring Boot web项目，只需要在pom.xml中引入：1234&amp;lt;dependency&amp;gt;    &amp;lt;groupId&amp;gt;org.springframework.boot&amp;lt;/groupId&amp;gt;    &amp;lt;artifactId">
 <meta property="og:locale" content="zh-Hans">
-<meta property="og:image" content="http://yoursite.com/images/spring%20boot%20load%20tomcat.png">
-<meta property="og:image" content="http://yoursite.com/images/servletwebserverfactory.png">
+<meta property="og:image" content="http://yoursite.com/2018/03/21/Spring%20Boot如何加载tomcat/images/spring%20boot%20load%20tomcat.png">
+<meta property="og:image" content="http://yoursite.com/2018/03/21/Spring%20Boot如何加载tomcat/images/servletwebserverfactory.png">
 <meta property="og:updated_time" content="2018-03-21T15:31:32.182Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="Spring Boot如何加载tomcat">
 <meta name="twitter:description" content="有同事说面试时被问到Spring Boot是如何加载tomcat的，我也是一脸懵逼。特意debug了一下，大致的加载过程如下图所示:  Spring Boot web项目，只需要在pom.xml中引入：1234&amp;lt;dependency&amp;gt;    &amp;lt;groupId&amp;gt;org.springframework.boot&amp;lt;/groupId&amp;gt;    &amp;lt;artifactId">
-<meta name="twitter:image" content="http://yoursite.com/images/spring%20boot%20load%20tomcat.png">
+<meta name="twitter:image" content="http://yoursite.com/2018/03/21/Spring%20Boot如何加载tomcat/images/spring%20boot%20load%20tomcat.png">
 
 
 
@@ -303,7 +303,7 @@
 
       
         <p>有同事说面试时被问到Spring Boot是如何加载tomcat的，我也是一脸懵逼。特意debug了一下，大致的加载过程如下图所示:</p>
-<p><img src="/images/spring boot load tomcat.png" alt=""></p>
+<p><img src="/2018/03/21/Spring Boot如何加载tomcat/images/spring boot load tomcat.png" alt=""></p>
 <p>Spring Boot web项目，只需要在pom.xml中引入：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">&lt;dependency&gt;</span><br><span class="line">    &lt;groupId&gt;org.springframework.boot&lt;/groupId&gt;</span><br><span class="line">    &lt;artifactId&gt;spring-boot-starter-web&lt;/artifactId&gt;</span><br><span class="line">&lt;/dependency&gt;</span><br></pre></td></tr></table></figure></p>
 <p>在github上看spring-boot-starter-web的pom.xml定义，有如下依赖：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line">&lt;dependency&gt;</span><br><span class="line">	&lt;groupId&gt;org.springframework.boot&lt;/groupId&gt;</span><br><span class="line">	&lt;artifactId&gt;spring-boot-starter-tomcat&lt;/artifactId&gt;</span><br><span class="line">&lt;/dependency&gt;</span><br><span class="line"></span><br><span class="line">......</span><br><span class="line"></span><br><span class="line">&lt;dependency&gt;</span><br><span class="line">	&lt;groupId&gt;org.springframework&lt;/groupId&gt;</span><br><span class="line">	&lt;artifactId&gt;spring-web&lt;/artifactId&gt;</span><br><span class="line">&lt;/dependency&gt;</span><br><span class="line">&lt;dependency&gt;</span><br><span class="line">	&lt;groupId&gt;org.springframework&lt;/groupId&gt;</span><br><span class="line">	&lt;artifactId&gt;spring-webmvc&lt;/artifactId&gt;</span><br><span class="line">&lt;/dependency&gt;</span><br></pre></td></tr></table></figure></p>
 <p>默认加载了tomcat作为web容器。</p>
@@ -316,7 +316,7 @@
 <p>getBeanFactory()<br>                .getBeanNamesForType(ServletWebServerFactory.class)的实现代码也很复杂，用来从classpath中查找具体哪个容器类（tomcat, jetty，netty或undertow）。</p>
 <p>spring-boot-starter-web默认加载了spring-boot-starter-tomcat，进而加载了tomcat-embed-core，所以这里得到了tomcatServletWebServerFactory，并通过getTomcatWebServer(Tomcat tomcat)实例化TomcatWebServer，最终TomcatWebServer调用initialize()方法完成tomcat.start()调用。</p>
 <p>JettyServletWebServerFactory和UndertowServletWebServerFactory，也继承了AbstractServletWebServerFactory，为何它们没有被getBeanNamesForType(ServletWebServerFactory.class)获取到呢? 查看他们的源码，可以看到分别import了org.eclipse.jetty.*和io.undertow.*，但我们并没有在项目中引入jetty或undertow，所以JettyServletWebServerFactory和UndertowServletWebServerFactory是没办法通过getBeanFactory().getBean(name, ServletWebServerFactory.class)来实例化的。</p>
-<p><img src="/images/servletwebserverfactory.png" alt=""></p>
+<p><img src="/2018/03/21/Spring Boot如何加载tomcat/images/servletwebserverfactory.png" alt=""></p>
 <p>如果pom.xml中同时加了tomcat和jetty，beanNames会得到两个元素，元素个数超过1，也会报错：“Unable to start ServletWebServerApplicationContext due to multiple ServletWebServerFactory beans”。</p>
 <p>以上大致分析了spring-boot-starter加载tomcat的过程。spring-boot-starter总共提供了51个常用的库加载，很方便的简化了第三方库的引用和配置，都值得我们应用和学习。</p>
 

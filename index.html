@@ -728,7 +728,7 @@
         
           
             <p>有同事说面试时被问到Spring Boot是如何加载tomcat的，我也是一脸懵逼。特意debug了一下，大致的加载过程如下图所示:</p>
-<p><img src="/images/spring boot load tomcat.png" alt=""></p>
+<p><img src="/2018/03/21/Spring Boot如何加载tomcat/images/spring boot load tomcat.png" alt=""></p>
 <p>Spring Boot web项目，只需要在pom.xml中引入：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">&lt;dependency&gt;</span><br><span class="line">    &lt;groupId&gt;org.springframework.boot&lt;/groupId&gt;</span><br><span class="line">    &lt;artifactId&gt;spring-boot-starter-web&lt;/artifactId&gt;</span><br><span class="line">&lt;/dependency&gt;</span><br></pre></td></tr></table></figure></p>
 <p>在github上看spring-boot-starter-web的pom.xml定义，有如下依赖：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line">&lt;dependency&gt;</span><br><span class="line">	&lt;groupId&gt;org.springframework.boot&lt;/groupId&gt;</span><br><span class="line">	&lt;artifactId&gt;spring-boot-starter-tomcat&lt;/artifactId&gt;</span><br><span class="line">&lt;/dependency&gt;</span><br><span class="line"></span><br><span class="line">......</span><br><span class="line"></span><br><span class="line">&lt;dependency&gt;</span><br><span class="line">	&lt;groupId&gt;org.springframework&lt;/groupId&gt;</span><br><span class="line">	&lt;artifactId&gt;spring-web&lt;/artifactId&gt;</span><br><span class="line">&lt;/dependency&gt;</span><br><span class="line">&lt;dependency&gt;</span><br><span class="line">	&lt;groupId&gt;org.springframework&lt;/groupId&gt;</span><br><span class="line">	&lt;artifactId&gt;spring-webmvc&lt;/artifactId&gt;</span><br><span class="line">&lt;/dependency&gt;</span><br></pre></td></tr></table></figure></p>
 <p>默认加载了tomcat作为web容器。</p>
@@ -741,7 +741,7 @@
 <p>getBeanFactory()<br>                .getBeanNamesForType(ServletWebServerFactory.class)的实现代码也很复杂，用来从classpath中查找具体哪个容器类（tomcat, jetty，netty或undertow）。</p>
 <p>spring-boot-starter-web默认加载了spring-boot-starter-tomcat，进而加载了tomcat-embed-core，所以这里得到了tomcatServletWebServerFactory，并通过getTomcatWebServer(Tomcat tomcat)实例化TomcatWebServer，最终TomcatWebServer调用initialize()方法完成tomcat.start()调用。</p>
 <p>JettyServletWebServerFactory和UndertowServletWebServerFactory，也继承了AbstractServletWebServerFactory，为何它们没有被getBeanNamesForType(ServletWebServerFactory.class)获取到呢? 查看他们的源码，可以看到分别import了org.eclipse.jetty.*和io.undertow.*，但我们并没有在项目中引入jetty或undertow，所以JettyServletWebServerFactory和UndertowServletWebServerFactory是没办法通过getBeanFactory().getBean(name, ServletWebServerFactory.class)来实例化的。</p>
-<p><img src="/images/servletwebserverfactory.png" alt=""></p>
+<p><img src="/2018/03/21/Spring Boot如何加载tomcat/images/servletwebserverfactory.png" alt=""></p>
 <p>如果pom.xml中同时加了tomcat和jetty，beanNames会得到两个元素，元素个数超过1，也会报错：“Unable to start ServletWebServerApplicationContext due to multiple ServletWebServerFactory beans”。</p>
 <p>以上大致分析了spring-boot-starter加载tomcat的过程。spring-boot-starter总共提供了51个常用的库加载，很方便的简化了第三方库的引用和配置，都值得我们应用和学习。</p>
 
@@ -1528,12 +1528,12 @@
 <p>再简要的说，ADS-B就是自动报告飞机的位置（包括经纬度、高度、速度、航向、应答机编码、机尾号等），并不断向地面广播。我们在地面上装一个设备，接收这个广播就行了，就跟听收音机一样。</p>
 <p>那么是不是所有的飞机都会向外发送ADS-B广播呢？目前最大的民用客机波音和空客基本上都有ADS-B设备，咱们自己的国产大飞机C919也支持ADS-B，但一些专飞支线的飞机像庞巴迪CRJ900等还不支持。从市场份额来看，目前全球和中国的90%以上的民用飞机都支持ADS-B了。FAA也在推动ADS-B成为下一代飞机位置监控的标准，并取代昂贵的雷达系统。可以认为未来所有的民用飞机都会支持ADS-B。</p>
 <p>ADS-B在国外发展的如火如荼，也催生了一批专业提供ADS-B数据的公司，如Flightradar24、AirNav等。<br>他们在全球部署receiver，组装成一个全球的设备网络，全球的飞机基本都有监控到。</p>
-<p><img src="ADS-B简介/adsb.jpg" alt=""></p>
+<p><img src="/2018/02/02/ADS-B简介/adsb.jpg" alt=""></p>
 <center>From flightradar24</center>
 
 
 <p>更重要的是，一大批航空爱好者也加入进来。如果你是个航空爱好者，酷爱DIY，只要有一个<a href="https://www.raspberrypi.org" target="_blank" rel="noopener">Raspberry Pi</a>开发板，刷上软件，再插上一根天线，就能在自家院子里收天上飞机的位置信号，这简直太酷了。给个传送门，就像这样玩：<a href="https://github.com/openskynetwork/raspberry-pi-adsb" target="_blank" rel="noopener">raspberry-pi-adsb</a>。某宝上也有卖哦~</p>
-<p><img src="ADS-B简介/assembled.jpg" alt=""></p>
+<p><img src="/2018/02/02/ADS-B简介/assembled.jpg" alt=""></p>
 <p>ADS-B广播唯一的缺点是穿透性太差，很容易受到大山和高楼建筑物的遮挡，所以recever必须部署在空旷的位置，比如楼顶。如果需要把数据共享到互联网上，还需要稳定的网络。有很多全球爱好者一起组成的大型ADS-B网络，共享彼此的数据，独乐乐不如众乐乐。</p>
 <p>有ADS-B receiver设备后，还要刷软件，把天线收到的1090频率的数据进行解析，转化成我们能理解的数据，比如：经纬度、高度、速度、航向、应答机编码、机尾号等。有大神把这一套软件也提供了：<a href="https://github.com/MalcolmRobb/dump1090" target="_blank" rel="noopener">dump1090</a>。</p>
 <p>刷了dump1090后，解析出来的数据格式是这样的：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">&#123;&quot;hex&quot;:&quot;780e21&quot;, &quot;squawk&quot;:&quot;3076&quot;, &quot;flight&quot;:&quot;CCA953&quot;, &quot;lat&quot;:38.711258, &quot;lon&quot;:119.635315, &quot;validposition&quot;:1, &quot;altitude&quot;:20700,  &quot;vert_rate&quot;:0,&quot;track&quot;:101, &quot;validtrack&quot;:1,&quot;speed&quot;:417, &quot;messages&quot;:155, &quot;seen&quot;:1,&quot;validground&quot;:0&#125;</span><br></pre></td></tr></table></figure></p>
