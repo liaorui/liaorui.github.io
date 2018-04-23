@@ -232,6 +232,153 @@
   
   
   <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2018/04/23/Prepare-statement防止SQL注入/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="Liao Rui">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="TechLiving">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">
+                
+                <a class="post-title-link" href="/2018/04/23/Prepare-statement防止SQL注入/" itemprop="url">PreparedStatement防止SQL注入</a></h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2018-04-23T17:25:14+08:00">
+                2018-04-23
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        
+          
+            <p>一般在程序里写SQL查询时，为了省事，往往喜欢把SQL语句和变量拼在一起，用字符串连起来。例如：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">public List&lt;User&gt; getUser(String name)&#123;</span><br><span class="line">    String sql = &quot;select * from user_tbl where name = &apos;&quot; + name + &quot;&apos;&quot;;</span><br><span class="line">    return queryForList(sql);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>其中，name是变量，从前端页面传过来的，这里容易发生SQL注入攻击。假如前端页面被恶意截获，输入<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">&apos; or &apos;1&apos;=&apos;1</span><br></pre></td></tr></table></figure></p>
+<p> ，那么上述的sql经过拼接后就变成了:<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">String sql = &quot;select * from user_tbl where name = &apos;&apos; or &apos;1&apos;=&apos;1&apos;&quot;;</span><br></pre></td></tr></table></figure></p>
+<p>由于or表达式为真，相当于用户表里所有的用户记录都满足where条件，会把用户表里所有的记录查出来。</p>
+<p>再恶意的攻击是输入<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">&apos;; drop table user_tbl; --</span><br></pre></td></tr></table></figure></p>
+<p>，直接删除用户表。其中，分号表示后面接新的SQL语句，而双横杠表示SQL注释，很可能被利用起来忽略掉正确的where过滤条件。因此，后端对SQL查询参数，一定要过滤单引号，分号和双横杠。</p>
+<p>JDBC里，可以用PreparedStatement预编译结合问号(?)来避免SQL注入，用法如下：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">public List&lt;User&gt; getUser(String name) &#123;</span><br><span class="line">    String sql = &quot;select * from user_tbl where name = ?&quot;;</span><br><span class="line">    PreparedStatement ps = conn.prepareStatement(sql);</span><br><span class="line">    ps.setString(1, name);</span><br><span class="line">    ...</span><br><span class="line"></span><br><span class="line">    return users;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>那么，为什么PreparedStatement可以解决SQL注入问题呢？</p>
+<p>从上面分析可以知道，单引号、分号和双横杠在SQL语句中有特殊含义，输入参数需要转义这几个字符，避免产生副作用，因此猜测JDBC也是这样干的。</p>
+<p>跟踪代码，可以看到Connection和PreparedStatement都是接口，转义操作不会在Java JDBC API里，那么应该是各个数据库厂商自己提供的JDBC driver里做了。</p>
+<p>下面以PostgreSQL为例，追踪一下代码，maven中引入：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">&lt;dependency&gt;</span><br><span class="line">    &lt;groupId&gt;postgresql&lt;/groupId&gt;</span><br><span class="line">    &lt;artifactId&gt;postgresql&lt;/artifactId&gt;</span><br><span class="line">    &lt;version&gt;9.1-901-1.jdbc4&lt;/version&gt;</span><br><span class="line">&lt;/dependency&gt;</span><br></pre></td></tr></table></figure></p>
+<p>在下面两行代码里加断点调试:<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">PreparedStatement ps = conn.prepareStatement(sql);</span><br><span class="line">ps.setString(1, name);</span><br></pre></td></tr></table></figure></p>
+<p>简单的两行代码，PostgreSQL driver干了很多事情，跟了很多遍，才找到如下的代码：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br></pre></td><td class="code"><pre><span class="line">org.postgresql.core.v3.SimpleParameterList</span><br><span class="line"></span><br><span class="line">int getV3Length(int index) &#123;</span><br><span class="line">    </span><br><span class="line">    ...</span><br><span class="line"></span><br><span class="line">    // Already encoded?</span><br><span class="line">    if (encoded[index] == null)</span><br><span class="line">    &#123;</span><br><span class="line">        // Encode value and compute actual length using UTF-8.</span><br><span class="line">        encoded[index] = Utils.encodeUTF8(paramValues[index].toString());</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    return encoded[index].length;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">void writeV3Value(int index, PGStream pgStream) throws IOException &#123;</span><br><span class="line">    </span><br><span class="line">    ...</span><br><span class="line"></span><br><span class="line">    // Encoded string.</span><br><span class="line">    if (encoded[index] == null)</span><br><span class="line">        encoded[index] = Utils.encodeUTF8((String)paramValues[index]);</span><br><span class="line">    pgStream.Send(encoded[index]);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">public void Send(byte buf[]) throws IOException</span><br><span class="line">&#123;</span><br><span class="line">    pg_output.write(buf);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>由于paramValues数组存了SQL输入参数，对比getV3Length()和writeV3Value()，输入参数其实并没有变化，最终pgStream.Send(encoded[index])直接通过Socket原样发给PostgerSQL Server了。</p>
+<p>encodeUTF8()实现也很简单：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">public static byte[] encodeUTF8(String str) &#123;</span><br><span class="line">        // Previously we just used str.getBytes(&quot;UTF-8&quot;), but when</span><br><span class="line">        // the JVM is using more than one encoding the lookup cost</span><br><span class="line">        // makes that a loser to the below (even in the single thread case).</span><br><span class="line">        // When multiple threads are doing Charset lookups, they all get</span><br><span class="line">        // blocked and must wait, severely dropping throughput.</span><br><span class="line">        //</span><br><span class="line">        ByteBuffer buf = utf8Charset.encode(CharBuffer.wrap(str));</span><br><span class="line">        byte b[] = new byte[buf.limit()];</span><br><span class="line">        buf.get(b, 0, buf.limit());</span><br><span class="line">        return b;</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure></p>
+<p>这里直接调用了java.nio.charset.Charset的encode()方法。</p>
+<p>综上所知，<b>PostgreSQL driver并没有对单引号、分号和双横杠对转义处理，而是由PG server做的处理。</b></p>
+<p>其实PreparedStatement就是交由服务器预先编译，再由应用程序动态设置参数，相对直接操作JDBC，可以提升server端运行效率。PG server应该是对预编译情况下的输入参数做了特殊处理，防止SQL注入等安全问题。</p>
+<p>再看下面的问题，如果SQL语句查询时，where条件不是字符类型，而是int类型，能否避免SQL注入？<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">String sql = &quot;select * from user_tbl where id = ?&quot;;</span><br></pre></td></tr></table></figure></p>
+<p>id为integer类型，输入 1; drop table user_tbl; ，PreparedStatement执行直接报错了：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">org.postgresql.util.PSQLException: ERROR: operator does not exist: integer = character varying</span><br><span class="line">  建议：No operator matches the given name and argument type(s). You might need to add explicit type casts.</span><br><span class="line">  位置：32</span><br></pre></td></tr></table></figure></p>
+<p>用<a href="https://github.com/p6spy/p6spy" target="_blank" rel="noopener">p6spy</a>来打印SQL语句，发现：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">select * from user_tbl where id = &apos;1; drop table user_tbl;&apos;</span><br></pre></td></tr></table></figure></p>
+<p>id为integer类型，也被当成字符串来处理了，自动加了单引号。PostgreSQL driver应该是自动把integer, long等类型都当成string提交给server，由server根据表的schema定义会自动转化。这里id定义的是int型，server端转换类型出错了。</p>
+<p>PostgreSQL server本身支持Prepare语法，用法为：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">PREPARE p_st AS SELECT * FROM user_tbl WHERE name = ($1);</span><br><span class="line"></span><br><span class="line">EXECUTE p_st(&apos;&apos;&apos; or 1=1&apos;)</span><br></pre></td></tr></table></figure></p>
+<p>查询结果为空，pg server自动处理了特殊参数。$1 称为<b>bind variables（绑定变量）</b>，MySQL也支持Prepare语法。</p>
+<p>如果直接拼接字符串，再把SQL扔给pg server，它是不会做防SQL注入处理的。</p>
+<p>在使用某个数据库时，要测试，确认PreparedStatement是否能防SQL注入。也可以在应用层，由程序自动过滤掉单引号、分号和双横杠，可能会损失一些特殊的合法值查询，但可以避免出现SQL注入问题。</p>
+<p>[参考文献]<br>1、<a href="https://en.wikipedia.org/wiki/SQL_injection" target="_blank" rel="noopener">https://en.wikipedia.org/wiki/SQL_injection</a><br>2、<a href="https://www.postgresql.org/docs/9.3/static/sql-prepare.html" target="_blank" rel="noopener">https://www.postgresql.org/docs/9.3/static/sql-prepare.html</a><br>3、<a href="https://dev.mysql.com/doc/refman/5.5/en/sql-syntax-prepared-statements.html" target="_blank" rel="noopener">https://dev.mysql.com/doc/refman/5.5/en/sql-syntax-prepared-statements.html</a></p>
+
+          
+        
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+
+      
+
+      
+
+      
+      
+        <div class="post-eof"></div>
+      
+
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+    
+      
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
     <link itemprop="mainEntityOfPage" href="http://yoursite.com/2018/04/13/Mac上搭建Hadoop-Hive-Spark开发环境/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -1438,148 +1585,6 @@
 
 
     
-      
-
-  
-
-  
-  
-  
-
-  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
-  
-  
-  
-  <div class="post-block">
-    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2018/02/02/ADS-B简介/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="name" content="Liao Rui">
-      <meta itemprop="description" content="">
-      <meta itemprop="image" content="/images/avatar.gif">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="TechLiving">
-    </span>
-
-    
-      <header class="post-header">
-
-        
-        
-          <h1 class="post-title" itemprop="name headline">
-                
-                <a class="post-title-link" href="/2018/02/02/ADS-B简介/" itemprop="url">ADS-B简介</a></h1>
-        
-
-        <div class="post-meta">
-          <span class="post-time">
-            
-              <span class="post-meta-item-icon">
-                <i class="fa fa-calendar-o"></i>
-              </span>
-              
-                <span class="post-meta-item-text">发表于</span>
-              
-              <time title="创建于" itemprop="dateCreated datePublished" datetime="2018-02-02T08:18:20+08:00">
-                2018-02-02
-              </time>
-            
-
-            
-
-            
-          </span>
-
-          
-
-          
-            
-          
-
-          
-          
-
-          
-
-          
-
-          
-
-        </div>
-      </header>
-    
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-      
-
-      
-        
-          
-            <p>很多人问我，你们搞航班的数据从哪来的？我说花钱买，网上爬，装ADS-B设备收。这里简单介绍一下ADS-B。</p>
-<p>先看一下维基百科的介绍：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">Automatic dependent surveillance – broadcast (ADS–B) is a surveillance technology in which an aircraft determines its position via satellite navigation and periodically broadcasts it, enabling it to be tracked. </span><br><span class="line">The information can be received by air traffic control ground stations as a replacement for secondary radar as no interrogation signal is needed from the ground. </span><br><span class="line">It can also be received by other aircraft to provide situational awareness and allow self separation.</span><br><span class="line"></span><br><span class="line">ADS–B is &quot;automatic&quot; in that it requires no pilot or external input. </span><br><span class="line">It is &quot;dependent&quot; in that it depends on data from the aircraft&apos;s navigation system.</span><br></pre></td></tr></table></figure></p>
-<p>大体的意思就是一种通过卫星导航来监视飞机位置的技术，它是自动向外广播的，地面站可以接收。它用的其实就是飞机上的导航系统的数据。因为它的成本低，地面空管站也会用ADS-B来替代<a href="https://en.wikipedia.org/wiki/Secondary_surveillance_radar" target="_blank" rel="noopener">二次雷达</a>。听某业内人士说，购买一套二次雷达设备要几千万费用呢，而且只能军用，禁止民用。</p>
-<p>再简要的说，ADS-B就是自动报告飞机的位置（包括经纬度、高度、速度、航向、应答机编码、机尾号等），并不断向地面广播。我们在地面上装一个设备，接收这个广播就行了，就跟听收音机一样。</p>
-<p>那么是不是所有的飞机都会向外发送ADS-B广播呢？目前最大的民用客机波音和空客基本上都有ADS-B设备，咱们自己的国产大飞机C919也支持ADS-B，但一些专飞支线的飞机像庞巴迪CRJ900等还不支持。从市场份额来看，目前全球和中国的90%以上的民用飞机都支持ADS-B了。FAA也在推动ADS-B成为下一代飞机位置监控的标准，并取代昂贵的雷达系统。可以认为未来所有的民用飞机都会支持ADS-B。</p>
-<p>ADS-B在国外发展的如火如荼，也催生了一批专业提供ADS-B数据的公司，如Flightradar24、AirNav等。<br>他们在全球部署receiver，组装成一个全球的设备网络，全球的飞机基本都有监控到。</p>
-<p><img src="/2018/02/02/ADS-B简介/adsb.jpg" alt=""></p>
-<center>From flightradar24</center>
-
-
-<p>更重要的是，一大批航空爱好者也加入进来。如果你是个航空爱好者，酷爱DIY，只要有一个<a href="https://www.raspberrypi.org" target="_blank" rel="noopener">Raspberry Pi</a>开发板，刷上软件，再插上一根天线，就能在自家院子里收天上飞机的位置信号，这简直太酷了。给个传送门，就像这样玩：<a href="https://github.com/openskynetwork/raspberry-pi-adsb" target="_blank" rel="noopener">raspberry-pi-adsb</a>。某宝上也有卖哦~</p>
-<p><img src="/2018/02/02/ADS-B简介/assembled.jpg" alt=""></p>
-<p>ADS-B广播唯一的缺点是穿透性太差，很容易受到大山和高楼建筑物的遮挡，所以recever必须部署在空旷的位置，比如楼顶。如果需要把数据共享到互联网上，还需要稳定的网络。有很多全球爱好者一起组成的大型ADS-B网络，共享彼此的数据，独乐乐不如众乐乐。</p>
-<p>有ADS-B receiver设备后，还要刷软件，把天线收到的1090频率的数据进行解析，转化成我们能理解的数据，比如：经纬度、高度、速度、航向、应答机编码、机尾号等。有大神把这一套软件也提供了：<a href="https://github.com/MalcolmRobb/dump1090" target="_blank" rel="noopener">dump1090</a>。</p>
-<p>刷了dump1090后，解析出来的数据格式是这样的：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">&#123;&quot;hex&quot;:&quot;780e21&quot;, &quot;squawk&quot;:&quot;3076&quot;, &quot;flight&quot;:&quot;CCA953&quot;, &quot;lat&quot;:38.711258, &quot;lon&quot;:119.635315, &quot;validposition&quot;:1, &quot;altitude&quot;:20700,  &quot;vert_rate&quot;:0,&quot;track&quot;:101, &quot;validtrack&quot;:1,&quot;speed&quot;:417, &quot;messages&quot;:155, &quot;seen&quot;:1,&quot;validground&quot;:0&#125;</span><br></pre></td></tr></table></figure></p>
-<p>意思是应答机编码为780e21的这架飞机，正在20700英尺的高度飞行，位置在(38.711258,119.635315)，速度是417海里/小时。</p>
-<p>国外也有免费的ADS-B数据源：<a href="https://public-api.adsbexchange.com/VirtualRadar/AircraftList.json" target="_blank" rel="noopener">ADSBExchange</a>。对，定时刷这个接口就行了，把数据解析出来，分析飞机起飞和降落的趋势，估算实际起飞时间和实际到达时间。</p>
-<p>ADSBExchange给的ADS-B数据如下：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">&#123;&quot;Id&quot;:10697184,&quot;Rcvr&quot;:1,&quot;HasSig&quot;:true,&quot;Sig&quot;:23,&quot;Icao&quot;:&quot;A339E0&quot;,&quot;Bad&quot;:false,&quot;Reg&quot;:&quot;N307FR&quot;,&quot;FSeen&quot;:&quot;\/Date(1517527075034)\/&quot;,&quot;TSecs&quot;:7789,&quot;CMsgs&quot;:4678,&quot;Alt&quot;:35975,&quot;GAlt&quot;:36516,&quot;InHg&quot;:30.46063,&quot;AltT&quot;:0,&quot;Call&quot;:&quot;1459&quot;,&quot;Lat&quot;:37.1836,&quot;Long&quot;:-98.703978,&quot;PosTime&quot;:1517534852768,&quot;Mlat&quot;:false,&quot;Tisb&quot;:false,&quot;Spd&quot;:353.2,&quot;Trak&quot;:289.0,&quot;TrkH&quot;:false,&quot;Type&quot;:&quot;A20N&quot;,&quot;Mdl&quot;:&quot;Airbus A320 251NSL&quot;,&quot;Man&quot;:&quot;Airbus&quot;,&quot;CNum&quot;:&quot;7472&quot;,&quot;Op&quot;:&quot;Frontier Airlines&quot;,&quot;OpIcao&quot;:&quot;FFT&quot;,&quot;Sqk&quot;:&quot;4166&quot;,&quot;Help&quot;:false,&quot;Vsi&quot;:0,&quot;VsiT&quot;:0,&quot;WTC&quot;:2,&quot;Species&quot;:1,&quot;Engines&quot;:&quot;2&quot;,&quot;EngType&quot;:3,&quot;EngMount&quot;:0,&quot;Mil&quot;:false,&quot;Cou&quot;:&quot;United States&quot;,&quot;HasPic&quot;:false,&quot;Interested&quot;:false,&quot;FlightsCount&quot;:0,&quot;Gnd&quot;:false,&quot;SpdTyp&quot;:0,&quot;CallSus&quot;:false,&quot;Trt&quot;:2,&quot;Year&quot;:&quot;2016&quot;&#125;</span><br></pre></td></tr></table></figure></p>
-<p>数据的定义在这里<a href="http://www.virtualradarserver.co.uk/Documentation/Formats/AircraftList.aspx" target="_blank" rel="noopener">AircraftList.json</a></p>
-<p>国内最大的无人机厂商大疆公司也开始在无人机上安装ADS-B receiver了，试图解决无人机对民航客机的干扰问题: <a><a href="https://bbs.dji.com/thread-109351-1-1.html" target="_blank" rel="noopener">https://bbs.dji.com/thread-109351-1-1.html</a></a></p>
-<p>我们在国内各个主要机场部署ADS-B receiver，刷上dump1090软件，自己组网，所有的receiver往server传数据，然后再解析，就拿到航班数据了。部署在机场，主要是想拿到飞机刚起飞或快要降落的低空信号，可以更准确的估算出飞机实际起飞和实际到达时间。</p>
-<p>受地形影响，新疆、西藏、云贵高原等地区，基本很难通过receiver收ADS-B信号。能方便接收ADS-B信号的主要集中在华北、华东、中南，还有东北、西北、西南少部分地区。</p>
-
-          
-        
-      
-    </div>
-    
-    
-    
-
-    
-
-    
-
-    
-
-    <footer class="post-footer">
-      
-
-      
-
-      
-
-      
-      
-        <div class="post-eof"></div>
-      
-
-    </footer>
-  </div>
-  
-  
-  
-  </article>
-
-
-    
   </section>
 
   
@@ -1630,7 +1635,7 @@
               
                 <a href="/archives/">
               
-                  <span class="site-state-item-count">13</span>
+                  <span class="site-state-item-count">14</span>
                   <span class="site-state-item-name">日志</span>
                 </a>
               </div>
