@@ -88,7 +88,7 @@
 <meta property="og:locale" content="zh-Hans">
 <meta property="og:image" content="http://yoursite.com/2018/03/21/Spring%20Boot如何加载tomcat/spring%20boot%20load%20tomcat.png">
 <meta property="og:image" content="http://yoursite.com/2018/03/21/Spring%20Boot如何加载tomcat/servletwebserverfactory.png">
-<meta property="og:updated_time" content="2018-05-04T02:13:37.733Z">
+<meta property="og:updated_time" content="2018-05-04T02:34:26.620Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="Spring Boot如何加载tomcat">
 <meta name="twitter:description" content="有同事说面试时被问到Spring Boot是如何加载tomcat的，我也是一脸懵逼。特意debug了一下，大致的加载过程如下图所示:  Spring Boot web项目，只需要在pom.xml中引入：1234&amp;lt;dependency&amp;gt;    &amp;lt;groupId&amp;gt;org.springframework.boot&amp;lt;/groupId&amp;gt;    &amp;lt;artifactId">
@@ -318,7 +318,10 @@
 <p>JettyServletWebServerFactory和UndertowServletWebServerFactory，也继承了AbstractServletWebServerFactory，为何它们没有被getBeanNamesForType(ServletWebServerFactory.class)获取到呢? 查看他们的源码，可以看到分别import了org.eclipse.jetty.*和io.undertow.*，但我们并没有在项目中引入jetty或undertow，所以JettyServletWebServerFactory和UndertowServletWebServerFactory是没办法通过getBeanFactory().getBean(name, ServletWebServerFactory.class)来实例化的。</p>
 <p><img src="/2018/03/21/Spring Boot如何加载tomcat/servletwebserverfactory.png" alt=""></p>
 <p>如果pom.xml中同时加了tomcat和jetty，beanNames会得到两个元素，元素个数超过1，也会报错：“Unable to start ServletWebServerApplicationContext due to multiple ServletWebServerFactory beans”。</p>
-<p>以上大致分析了spring-boot-starter加载tomcat的过程。spring-boot-starter总共提供了51个常用的库加载，很方便的简化了第三方库的引用和配置，都值得我们应用和学习。</p>
+<p>另外一个问题是，Spring Boot是怎么判断是否是一个web应用，并自动加载对应的web容器的？这是由SpringApplication的webEnvironment变量来标识的。</p>
+<p>当工程的pom.xml文件里引入了spring-boot-starter-web，SpringApplication.run()方法会调用new SpringApplication(sources).run(args)，然后在void initialize(Object[] sources)方法里对webEnvironment赋值。<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br></pre></td><td class="code"><pre><span class="line">this.webEnvironment = deduceWebEnvironment();</span><br><span class="line"></span><br><span class="line">...</span><br><span class="line">private boolean deduceWebEnvironment() &#123;</span><br><span class="line">	for (String className : WEB_ENVIRONMENT_CLASSES) &#123;</span><br><span class="line">		if (!ClassUtils.isPresent(className, null)) &#123;</span><br><span class="line">			return false;</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line">	return true;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">...</span><br><span class="line">private static final String[] WEB_ENVIRONMENT_CLASSES = &#123; &quot;javax.servlet.Servlet&quot;,</span><br><span class="line">&quot;org.springframework.web.context.ConfigurableWebApplicationContext&quot; &#125;;</span><br><span class="line"></span><br><span class="line">...</span><br><span class="line">private ConfigurableEnvironment getOrCreateEnvironment() &#123;</span><br><span class="line">		if (this.environment != null) &#123;</span><br><span class="line">			return this.environment;</span><br><span class="line">		&#125;</span><br><span class="line">		if (this.webEnvironment) &#123;</span><br><span class="line">			return new StandardServletEnvironment();</span><br><span class="line">		&#125;</span><br><span class="line">		return new StandardEnvironment();</span><br><span class="line">	&#125;</span><br></pre></td></tr></table></figure></p>
+<p>从以上代码里可以看到，通过反射技术判断Java环境变量里是否有Servlet和ConfigurableWebApplicationContext,如果都找到了，webEnvironment置为ture，并在后面创建StandardServletEnvironment的配置环境，最后启动web容器。</p>
+<p>spring-boot-starter总共提供了51个常用的库加载，很方便的简化了第三方库的引用和配置，都值得我们应用和学习。</p>
 
       
     </div>
@@ -432,7 +435,7 @@
               
                 <a href="/archives/">
               
-                  <span class="site-state-item-count">14</span>
+                  <span class="site-state-item-count">15</span>
                   <span class="site-state-item-name">日志</span>
                 </a>
               </div>
