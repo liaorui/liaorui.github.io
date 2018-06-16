@@ -232,6 +232,162 @@
   
   
   <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2018/06/16/CentOS-7离线安装Kubernetes/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="Liao Rui">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="TechLiving">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">
+                
+                <a class="post-title-link" href="/2018/06/16/CentOS-7离线安装Kubernetes/" itemprop="url">CentOS 7离线安装Kubernetes</a></h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2018-06-16T07:07:18+08:00">
+                2018-06-16
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        
+          
+            <p>本机上搭完了minikube环境，跑了几个k8s的例子，还是不满足，想在集群环境下搭建k8s，进一步学习。可是服务器是内网环境，不能用yum连接外网自动安装。</p>
+<p>一开始根据网上教程，在<a href="https://github.com/kubernetes/kubernetes/blob/master/CHANGELOG-1.10.md#downloads-for-v1104" target="_blank" rel="noopener">github</a>下载了最新稳定版1.10.4的kubenetes服务端安装包，主要是kubeadm、kubelet、kubectl等命令，不需要其它的软件依赖。kubeadm是初始化集群master的管理工具，可能通过kubeadm init快速建立master。kubelet是调度k8s任务和监控集群状态的工具。kubectl是与集群交互的命令行工具。</p>
+<p>还要下载etcd的二进制程序后，在服务器上执行kubeadm init，直接提示获取最新k8s版本信息失败。</p>
+<p>原来kubeadm运行参数中没有指定k8s版本时，会自动联网获取最新版本信息。而服务器是不能连外网的，需要指定–kubernetes-version:<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">kubeadm init --kubernetes-version v1.10.0</span><br></pre></td></tr></table></figure></p>
+<p>本地肯定也要下载v1.10.0版本的依赖镜像。按照<a href="https://github.com/kubernetes/kubernetes/blob/master/CHANGELOG-1.10.md#downloads-for-v1104" target="_blank" rel="noopener">github</a>的指导，下载如下镜像：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">k8s.gcr.io/kube-proxy-amd64                v1.10.0             bfc21aadc7d3        2 months ago        97MB</span><br><span class="line">k8s.gcr.io/kube-controller-manager-amd64   v1.10.0             ad86dbed1555        2 months ago        148MB</span><br><span class="line">k8s.gcr.io/kube-apiserver-amd64            v1.10.0             af20925d51a3        2 months ago        225MB</span><br><span class="line">k8s.gcr.io/kube-scheduler-amd64            v1.10.0             704ba848e69a        2 months ago        50.4MB</span><br><span class="line">weaveworks/weave-npc                       2.2.1               26d868a4eb75        3 months ago        46.6MB</span><br><span class="line">weaveworks/weave-kube                      2.2.1               86e2da7dd27b        3 months ago        93.8MB</span><br><span class="line">k8s.gcr.io/etcd-amd64                      3.1.12              52920ad46f5b        3 months ago        193MB</span><br><span class="line">k8s.gcr.io/kubernetes-dashboard-amd64      v1.8.3              0c60bcf89900        4 months ago        102MB</span><br><span class="line">k8s.gcr.io/k8s-dns-dnsmasq-nanny-amd64     1.14.8              c2ce1ffb51ed        5 months ago        41MB</span><br><span class="line">k8s.gcr.io/k8s-dns-sidecar-amd64           1.14.8              6f7f2dc7fab5        5 months ago        42.2MB</span><br><span class="line">k8s.gcr.io/k8s-dns-kube-dns-amd64          1.14.8              80cc5ea4b547        5 months ago        50.5MB</span><br><span class="line">k8s.gcr.io/pause-amd64                     3.1                 da86e6ba6ca1        5 months ago        742kB</span><br></pre></td></tr></table></figure></p>
+<p>具体方法是，登录本地的minikube:<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line">minikube ssh</span><br><span class="line"></span><br><span class="line">docker pull k8s.gcr.io/kube-proxy-amd64:v1.10.0</span><br><span class="line">docker pull k8s.gcr.io/kube-controller-manager-amd64:v1.10.0</span><br><span class="line">docker pull k8s.gcr.io/kube-apiserver-amd64:v1.10.0</span><br><span class="line">docker pull k8s.gcr.io/kube-scheduler-amd64:v1.10.0</span><br><span class="line">docker pull weaveworks/weave-npc:2.2.1 </span><br><span class="line">docker pull weaveworks/weave-kube:2.2.1</span><br><span class="line">docker pull k8s.gcr.io/etcd-amd64:3.1.12</span><br><span class="line">docker pull k8s.gcr.io/kubernetes-dashboard-amd64:v1.8.3</span><br><span class="line">docker pull k8s.gcr.io/k8s-dns-dnsmasq-nanny-amd64:1.14.8</span><br><span class="line">docker pull k8s.gcr.io/k8s-dns-sidecar-amd64:1.14.8</span><br><span class="line">docker pull k8s.gcr.io/k8s-dns-kube-dns-amd64:1.14.8 </span><br><span class="line">docker pull k8s.gcr.io/pause-amd64:3.1</span><br></pre></td></tr></table></figure></p>
+<p>因为需要翻墙，需要配置minikube的shadowsoks代理。有两种代理方式：1、命令行代理：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">minikube start --docker-env=HTTP_PROXY=http://192.168.99.1:1087 \</span><br><span class="line">               --docker-env=HTTPS_PROXY=https://192.168.99.1:1087</span><br></pre></td></tr></table></figure></p>
+<p>2、编辑 ~/.minikube/machines/minikube/config.json中的HostOptions.EngineOptions.Env配置，加入：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">&quot;Env&quot;: [</span><br><span class="line">    &quot;HTTP_PROXY=http://192.168.99.1:1087&quot;,</span><br><span class="line">    &quot;HTTPS_PROXY=http://192.168.99.1:1087&quot;,</span><br><span class="line">    &quot;NO_PROXY=192.168.99.100/24&quot;</span><br><span class="line">]</span><br></pre></td></tr></table></figure></p>
+<p>说明一下，minikube虚拟环境的IP默认是192.168.99.100，宿主机（也是本地电脑）的IP默认是192.168.99.1。所以需要以上设置ss代理。</p>
+<p>minikube环境里的docker全部pull完毕后，再依次执行docker save。<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">docker save k8s.gcr.io/kube-proxy-amd64:v1.10.0 &gt; kube-proxy-amd64</span><br><span class="line">......</span><br></pre></td></tr></table></figure></p>
+<p>全部导出来后打包成k8s.tar.gz。</p>
+<p>还要从minikube里导出到本地电脑磁盘上：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">scp -i $(minikube ssh-key) docker@$(minikube ip):/home/docker/k8s.tar.gz k8s.tar.gz</span><br></pre></td></tr></table></figure></p>
+<p>然后上传到服务器上，依次执行docker load:<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">docker load &lt; kube-proxy-amd64</span><br><span class="line">......</span><br></pre></td></tr></table></figure></p>
+<p>用docker images查看镜像，如果出现REPOSITORY和TAG为none，重新打一下标签：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">docker tag ad86dbed1555 k8s.gcr.io/kube-controller-manager-amd64:v1.10.0</span><br></pre></td></tr></table></figure></p>
+<p>如果服务器上还没有安装docker程序，可以在本地用createrepo构造docker的yum安装依赖包。<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br></pre></td><td class="code"><pre><span class="line"># 服务器上查看centos版本cat /etc/redhat-release，然后本地构建相同版本的centos系统</span><br><span class="line">docker pull centos:7.2.1511</span><br><span class="line"></span><br><span class="line"># 查看image id</span><br><span class="line">docker images</span><br><span class="line"></span><br><span class="line"># 进入centos环境</span><br><span class="line">docker run -ti &lt;IMAGE ID&gt; /bin/bash</span><br><span class="line"></span><br><span class="line"># 下载yum依赖包</span><br><span class="line">yum -y install yum-utils</span><br><span class="line">repotrack -a x86_64 -p yum/local createrepo</span><br><span class="line">repotrack -a x86_64 -p yum/local libgudev1</span><br><span class="line">repotrack -a x86_64 -p yum/local systemd-sysv</span><br><span class="line">repotrack -a x86_64 -p yum/local dracut-network</span><br><span class="line">repotrack -a x86_64 -p yum/local dracut-config-rescue</span><br><span class="line">repotrack -a x86_64 -p yum/local systemd-python</span><br><span class="line">yum-config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo</span><br><span class="line">repotrack -a x86_64 -p yum/local docker-ce</span><br><span class="line"></span><br><span class="line">tar czvf centos7-docker-yum.gz yum</span><br><span class="line"></span><br><span class="line"># 本地电脑执行docker ps，查看container id</span><br><span class="line">docker cp &lt;CONTAINER ID&gt;:/root/centos7-docker-yum.gz .</span><br></pre></td></tr></table></figure></p>
+<p>把所有依赖包导出来，然后上传服务器。<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line">tar xzvf centos7-docker-yum.gz</span><br><span class="line"></span><br><span class="line">vi /etc/yum.repos.d/CentOS-Local.repo</span><br><span class="line">[Local]</span><br><span class="line">name=Local Yum</span><br><span class="line">baseurl=file:///root/yum/</span><br><span class="line">gpgcheck=0</span><br><span class="line">enabled=1</span><br><span class="line"></span><br><span class="line">createrepo /root/yum</span><br><span class="line">yum makecache</span><br><span class="line"></span><br><span class="line">yum -y install docker-ce</span><br><span class="line"></span><br><span class="line">service docker start</span><br></pre></td></tr></table></figure></p>
+<p>这样服务器就离线安装好docker了。</p>
+<p>k8s镜像准备好后，再次执行 kubeadm init –kubernetes-version v1.10.0， 发现还是卡住了：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">......</span><br><span class="line">[init] This might take a minute or longer if the control plane images have to be pulled.</span><br></pre></td></tr></table></figure></p>
+<p>查看tail -f /var/log/messages，发现一直输出：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">kubelet_node_status.go:271] Setting node annotation to enable volume controller attach/detach</span><br></pre></td></tr></table></figure></p>
+<p>网上怎么查资料，都找不到解决办法。</p>
+<p>网上也有人打包好了k8s所有的安装包和镜像，并做成了shell脚本自动化安装，售价50元。本着程序员爱折腾不服气的精神，继续想办法。</p>
+<p>看到有人用yum安装kubelet、kubeadm和kubectl，突然想到也可以本地用docker构建yum依赖包。<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"># 服务器上查看centos版本cat /etc/redhat-release，然后本地构建相同的centos系统</span><br><span class="line">docker pull centos:7.2.1511</span><br><span class="line"></span><br><span class="line"># 查看image id</span><br><span class="line">docker images</span><br><span class="line"></span><br><span class="line"># 进入centos环境</span><br><span class="line">docker run -ti &lt;IMAGE ID&gt; /bin/bash</span><br><span class="line"></span><br><span class="line"># 下载依赖包</span><br><span class="line">repotrack -a x86_64 -p k8s kubelet kubeadm kubectl</span><br><span class="line">或者 yum -y install --downloadonly --downloaddir=k8s kubelet kubeadm kubectl</span><br></pre></td></tr></table></figure></p>
+<p>从docker里导出来，上传到服务器。并在服务器上重新构建yum本地仓库，然后安装yum install -y kubelet kubeadm kubectl。(具体步骤见文中离线安装docker部分)</p>
+<p>安装完成后，生成kubelet的systemctl脚本：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">systemctl enable kubelet</span><br></pre></td></tr></table></figure></p>
+<p>此时不要systemctl start kubelet，肯定会失败，还需要修改默认配置。</p>
+<p>编辑/etc/systemd/system/kubelet.service.d/10-kubeadm.conf。<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">[Service]</span><br><span class="line">......</span><br><span class="line">#Environment=&quot;KUBELET_NETWORK_ARGS=--network-plugin=cni --cni-conf-dir=/etc/cni/net.d --cni-bin-dir=/opt/cni/bin&quot;</span><br><span class="line">......</span><br><span class="line">Environment=&quot;KUBELET_CGROUP_ARGS=--cgroup-driver=cgroupfs&quot;</span><br><span class="line">......</span><br></pre></td></tr></table></figure></p>
+<p>去掉cni网络配置，并把cgroup-drive改成cgroupfs，跟docker的cgroup促成一致。</p>
+<p>以上全部准备好后，再次执行 kubeadm init –kubernetes-version v1.10.0 ，总算看到成功信息了：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line">......</span><br><span class="line">our Kubernetes master has initialized successfully!</span><br><span class="line"></span><br><span class="line">To start using your cluster, you need to run the following as a regular user:</span><br><span class="line"></span><br><span class="line">  mkdir -p $HOME/.kube</span><br><span class="line">  sudo cp -i /etc/kubernetes/admin.conf $HOME/.kube/config</span><br><span class="line">  sudo chown $(id -u):$(id -g) $HOME/.kube/config</span><br><span class="line"></span><br><span class="line">You should now deploy a pod network to the cluster.</span><br><span class="line">Run &quot;kubectl apply -f [podnetwork].yaml&quot; with one of the options listed at:</span><br><span class="line">  https://kubernetes.io/docs/concepts/cluster-administration/addons/</span><br><span class="line"></span><br><span class="line">You can now join any number of machines by running the following on each node</span><br><span class="line">as root:</span><br><span class="line"></span><br><span class="line">  kubeadm join 10.95.134.84:6443 --token 6h86uf.w4fybn0usz2e8etm --discovery-token-ca-cert-hash sha256:91be4a5060fcdd7d4a8bf7de7b468154401cce4b5dfd0d6aba6ec23a6e36000e</span><br></pre></td></tr></table></figure></p>
+<p>master就算安装成功了。接下来安装cluster。</p>
+<p>同样在其它服务器上用yum本地安装kubelet、kubeadm、kubectl，并编辑好/etc/systemd/system/kubelet.service.d/10-kubeadm.conf。<br>然后执行:<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">kubeadm join 10.95.134.84:6443 --token 6h86uf.w4fybn0usz2e8etm --discovery-token-ca-cert-hash sha256:91be4a5060fcdd7d4a8bf7de7b468154401cce4b5dfd0d6aba6ec23a6e36000e</span><br></pre></td></tr></table></figure></p>
+<p>会提示加入到cluster成功。</p>
+<p>在master服务器上执行：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">kubectl get nodes</span><br></pre></td></tr></table></figure></p>
+<p>看到如下信息：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">NAME                   STATUS    ROLES     AGE       VERSION</span><br><span class="line">server01               Ready     &lt;none&gt;    9h        v1.10.4</span><br><span class="line">server02               Ready     master    9h        v1.10.4</span><br><span class="line">server03               Ready     &lt;none&gt;    8h        v1.10.4</span><br></pre></td></tr></table></figure></p>
+<p>k8s集群环境搭建完毕！</p>
+<p>k8s的环境搭建确实很麻烦，即使服务器有网络环境，也需要翻墙软件，才能自动docker下载。也有教程指导从国内阿里云等下载镜像，用docker tag重新打标签。后面再尝试吧。</p>
+<p>对于一个全新的技术框架，亲自动手搭建环境，跑demo是第一步，后面继续折腾吧。</p>
+
+          
+        
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+
+      
+
+      
+
+      
+      
+        <div class="post-eof"></div>
+      
+
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+    
+      
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
     <link itemprop="mainEntityOfPage" href="http://yoursite.com/2018/05/17/Sleuth-Kafka-Zipkin-ElasticSearch链路追踪/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -1473,138 +1629,6 @@
 
 
     
-      
-
-  
-
-  
-  
-  
-
-  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
-  
-  
-  
-  <div class="post-block">
-    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2018/02/25/Spring-Boot项目maven打包方式总结/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="name" content="Liao Rui">
-      <meta itemprop="description" content="">
-      <meta itemprop="image" content="/images/avatar.gif">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="TechLiving">
-    </span>
-
-    
-      <header class="post-header">
-
-        
-        
-          <h1 class="post-title" itemprop="name headline">
-                
-                <a class="post-title-link" href="/2018/02/25/Spring-Boot项目maven打包方式总结/" itemprop="url">Spring Boot项目maven打包方式总结</a></h1>
-        
-
-        <div class="post-meta">
-          <span class="post-time">
-            
-              <span class="post-meta-item-icon">
-                <i class="fa fa-calendar-o"></i>
-              </span>
-              
-                <span class="post-meta-item-text">发表于</span>
-              
-              <time title="创建于" itemprop="dateCreated datePublished" datetime="2018-02-25T08:49:55+08:00">
-                2018-02-25
-              </time>
-            
-
-            
-
-            
-          </span>
-
-          
-
-          
-            
-          
-
-          
-          
-
-          
-
-          
-
-          
-
-        </div>
-      </header>
-    
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-      
-
-      
-        
-          
-            <p>Spring Boot将Spring框架和第三方依赖jar包集成在一起，开发者只需要很少的配置就可以实现”just run”的目标。</p>
-<p>Spring Boot为maven管理的项目提供了spring-boot-maven-plugin插件，自动打包各种依赖包，生成一个java -jar直接运行的单独的jar包。<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">&lt;plugin&gt;</span><br><span class="line">    &lt;groupId&gt;org.springframework.boot&lt;/groupId&gt;</span><br><span class="line">    &lt;artifactId&gt;spring-boot-maven-plugin&lt;/artifactId&gt;</span><br><span class="line">    &lt;version&gt;1.4.2.RELEASE&lt;/version&gt;</span><br><span class="line">&lt;/plugin&gt;</span><br></pre></td></tr></table></figure></p>
-<p>这种打包方式适合于服务器端打包，可以避免各种配置错误和依赖包缺少及冲突，常用Jenkins+git+maven来做持续集成发布。</p>
-<p>而在某些场景下，想直接在本地打包，再上传到服务器运行，由于jar包通常都是50M以上，需要花费较长的网络传输时间。特别是网络情况不好时，经常上传失败，严重影响工作效率。</p>
-<p>可以用如下maven插件配置，将业务代码和依赖lib库分离，lib目录下的各个依赖包一次上传服务器，后续只需要上传业务代码jar包就行了，不需要每次重复上传依赖包。<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br></pre></td><td class="code"><pre><span class="line">&lt;plugin&gt;</span><br><span class="line">    &lt;groupId&gt;org.apache.maven.plugins&lt;/groupId&gt;</span><br><span class="line">    &lt;artifactId&gt;maven-jar-plugin&lt;/artifactId&gt;</span><br><span class="line">    &lt;configuration&gt;</span><br><span class="line">        &lt;encoding&gt;UTF-8&lt;/encoding&gt;</span><br><span class="line">        &lt;archive&gt;</span><br><span class="line">            &lt;manifest&gt;</span><br><span class="line">                &lt;mainClass&gt;com.xxx.Application&lt;/mainClass&gt;</span><br><span class="line">                &lt;addClasspath&gt;true&lt;/addClasspath&gt;</span><br><span class="line">                &lt;classpathPrefix&gt;lib/&lt;/classpathPrefix&gt;</span><br><span class="line">            &lt;/manifest&gt;</span><br><span class="line">        &lt;/archive&gt;</span><br><span class="line">    &lt;/configuration&gt;</span><br><span class="line">&lt;/plugin&gt;</span><br><span class="line">&lt;plugin&gt;</span><br><span class="line">    &lt;groupId&gt;org.apache.maven.plugins&lt;/groupId&gt;</span><br><span class="line">    &lt;artifactId&gt;maven-dependency-plugin&lt;/artifactId&gt;</span><br><span class="line">    &lt;executions&gt;</span><br><span class="line">        &lt;execution&gt;</span><br><span class="line">            &lt;id&gt;copy-dependencies&lt;/id&gt;</span><br><span class="line">            &lt;phase&gt;package&lt;/phase&gt;</span><br><span class="line">            &lt;goals&gt;</span><br><span class="line">                &lt;goal&gt;copy-dependencies&lt;/goal&gt;</span><br><span class="line">            &lt;/goals&gt;</span><br><span class="line">            &lt;configuration&gt;</span><br><span class="line">                &lt;outputDirectory&gt;$&#123;project.build.directory&#125;/lib&lt;/outputDirectory&gt;</span><br><span class="line">                &lt;overWriteReleases&gt;false&lt;/overWriteReleases&gt;</span><br><span class="line">                &lt;overWriteSnapshots&gt;false&lt;/overWriteSnapshots&gt;</span><br><span class="line">                &lt;overWriteIfNewer&gt;true&lt;/overWriteIfNewer&gt;</span><br><span class="line">            &lt;/configuration&gt;</span><br><span class="line">        &lt;/execution&gt;</span><br><span class="line">    &lt;/executions&gt;</span><br><span class="line">&lt;/plugin&gt;</span><br></pre></td></tr></table></figure></p>
-<p>原理是将各种依赖jar包全部放在lib目录下，然后在业务项目jar包里的META-INF/MANIFEST.MF里自动添加Class-Path路径。用java -jar运行时，可以自动去lib目录下加载依赖jar包。</p>
-<p>项目开发时，通常会有本地环境，测试环境和线上环境，每个环境的配置文件是不一样的。有如下两种解决方法。</p>
-<p>1、在src/main/resources下生成dev、test、production三个目录，分别放入各自配置文件，然后利用profile和resource属性指定。<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line">&lt;profiles&gt;</span><br><span class="line">    &lt;profile&gt;</span><br><span class="line">        &lt;id&gt;production&lt;/id&gt;</span><br><span class="line">        &lt;activation&gt;</span><br><span class="line">            &lt;activeByDefault&gt;true&lt;/activeByDefault&gt;</span><br><span class="line">        &lt;/activation&gt;</span><br><span class="line">        &lt;properties&gt;</span><br><span class="line">            &lt;env&gt;production&lt;/env&gt;</span><br><span class="line">        &lt;/properties&gt;</span><br><span class="line">    &lt;/profile&gt;</span><br><span class="line">    &lt;profile&gt;</span><br><span class="line">        &lt;id&gt;test&lt;/id&gt;</span><br><span class="line">        &lt;properties&gt;</span><br><span class="line">            &lt;env&gt;test&lt;/env&gt;</span><br><span class="line">        &lt;/properties&gt;</span><br><span class="line">    &lt;/profile&gt;</span><br><span class="line">    &lt;profile&gt;</span><br><span class="line">        &lt;id&gt;dev&lt;/id&gt;</span><br><span class="line">        &lt;properties&gt;</span><br><span class="line">            &lt;env&gt;dev&lt;/env&gt;</span><br><span class="line">        &lt;/properties&gt;</span><br><span class="line">    &lt;/profile&gt;</span><br><span class="line">&lt;/profiles&gt;</span><br></pre></td></tr></table></figure></p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line">&lt;resources&gt;</span><br><span class="line">    &lt;resource&gt;</span><br><span class="line">        &lt;directory&gt;src/main/resources/$&#123;env&#125;&lt;/directory&gt;</span><br><span class="line">        &lt;includes&gt;</span><br><span class="line">            &lt;include&gt;**/*.properties&lt;/include&gt;</span><br><span class="line">            &lt;include&gt;**/*.xml&lt;/include&gt;</span><br><span class="line">        &lt;/includes&gt;</span><br><span class="line">    &lt;/resource&gt;</span><br><span class="line">    &lt;resource&gt;</span><br><span class="line">        &lt;directory&gt;src/main/resources&lt;/directory&gt;</span><br><span class="line">        &lt;includes&gt;</span><br><span class="line">            &lt;include&gt;**/*.xml&lt;/include&gt;</span><br><span class="line">            &lt;include&gt;**/*.properties&lt;/include&gt;</span><br><span class="line">        &lt;/includes&gt;</span><br><span class="line">        &lt;excludes&gt;</span><br><span class="line">            &lt;exclude&gt;src/main/resources/META-INF&lt;/exclude&gt;</span><br><span class="line">        &lt;/excludes&gt;</span><br><span class="line">    &lt;/resource&gt;</span><br><span class="line">&lt;/resources&gt;</span><br></pre></td></tr></table></figure>
-<p>配置好后，通过maven的-P参数：mvn package -Pdev、mvn package -Ptest和mvn package -Pproduction，打包不同环境的配置文件。如果不指定-P，则默认是production环境。</p>
-<p>2、配置文件里用${}占位符，利用maven-resources-plugin自动填充。<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br></pre></td><td class="code"><pre><span class="line">application.properties配置：</span><br><span class="line">server.port=$&#123;server.port&#125;</span><br><span class="line"></span><br><span class="line">pom.xml配置：</span><br><span class="line">&lt;plugin&gt;</span><br><span class="line">    &lt;groupId&gt;org.apache.maven.plugins&lt;/groupId&gt;</span><br><span class="line">    &lt;artifactId&gt;maven-resources-plugin&lt;/artifactId&gt;</span><br><span class="line">    &lt;configuration&gt;</span><br><span class="line">        &lt;encoding&gt;UTF-8&lt;/encoding&gt;</span><br><span class="line">        &lt;delimiters&gt;</span><br><span class="line">            &lt;delimiter&gt;$&#123;*&#125;&lt;/delimiter&gt;</span><br><span class="line">        &lt;/delimiters&gt;</span><br><span class="line">        &lt;resources&gt;</span><br><span class="line">            &lt;resource&gt;</span><br><span class="line">                &lt;directory&gt;src/main/resources&lt;/directory&gt;</span><br><span class="line">                &lt;filtering&gt;true&lt;/filtering&gt;</span><br><span class="line">                &lt;includes&gt;</span><br><span class="line">                    &lt;include&gt;*.properties&lt;/include&gt;</span><br><span class="line">                    &lt;include&gt;*.xml&lt;/include&gt;</span><br><span class="line">                &lt;/includes&gt;</span><br><span class="line">            &lt;/resource&gt;</span><br><span class="line">        &lt;/resources&gt;</span><br><span class="line">    &lt;/configuration&gt;</span><br><span class="line">&lt;/plugin&gt;</span><br><span class="line"></span><br><span class="line">&lt;profiles&gt;</span><br><span class="line">    &lt;profile&gt;</span><br><span class="line">        &lt;id&gt;production&lt;/id&gt;</span><br><span class="line">        &lt;activation&gt;</span><br><span class="line">            &lt;activeByDefault&gt;true&lt;/activeByDefault&gt;</span><br><span class="line">        &lt;/activation&gt;</span><br><span class="line">        &lt;properties&gt;</span><br><span class="line">            &lt;server.port&gt;8080&lt;/server.port&gt;</span><br><span class="line">        &lt;/properties&gt;</span><br><span class="line">    &lt;/profile&gt;</span><br><span class="line">    &lt;profile&gt;</span><br><span class="line">        &lt;id&gt;test&lt;/id&gt;</span><br><span class="line">        &lt;properties&gt;</span><br><span class="line">            &lt;server.port&gt;6680&lt;/server.port&gt;</span><br><span class="line">        &lt;/properties&gt;</span><br><span class="line">    &lt;/profile&gt;</span><br><span class="line">    &lt;profile&gt;</span><br><span class="line">        &lt;id&gt;dev&lt;/id&gt;</span><br><span class="line">        &lt;properties&gt;</span><br><span class="line">            &lt;server.port&gt;6688&lt;/server.port&gt;</span><br><span class="line">        &lt;/properties&gt;</span><br><span class="line">    &lt;/profile&gt;</span><br><span class="line">&lt;/profiles&gt;</span><br></pre></td></tr></table></figure></p>
-<p>同样运行maven命令打包：mvn package -Pdev或-Ptest或-Pproduction即可。</p>
-
-          
-        
-      
-    </div>
-    
-    
-    
-
-    
-
-    
-
-    
-
-    <footer class="post-footer">
-      
-
-      
-
-      
-
-      
-      
-        <div class="post-eof"></div>
-      
-
-    </footer>
-  </div>
-  
-  
-  
-  </article>
-
-
-    
   </section>
 
   
@@ -1655,7 +1679,7 @@
               
                 <a href="/archives/">
               
-                  <span class="site-state-item-count">15</span>
+                  <span class="site-state-item-count">16</span>
                   <span class="site-state-item-name">日志</span>
                 </a>
               </div>
