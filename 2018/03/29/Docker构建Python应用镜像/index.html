@@ -68,7 +68,7 @@
 
 
 
-  <meta name="keywords" content="Hexo, NexT" />
+  <meta name="keywords" content="docker," />
 
 
 
@@ -80,13 +80,14 @@
 
 
 <meta name="description" content="最近需要将Python应用程序部署上线，而用户现场的服务器基于安全原因，是不能访问外网的。Python需要访问Postgresql、Hive和ElasticSearch，需要psycopg2-binary、pyhs2、elasticsearch等插件。在测试环境下，通过pip install就能解决，但纯内网环境下，pip失去了作用。 pyhs2还依赖于cyrus-sasl-devel，有网情况下">
+<meta name="keywords" content="docker">
 <meta property="og:type" content="article">
 <meta property="og:title" content="Docker构建Python应用镜像">
 <meta property="og:url" content="http://yoursite.com/2018/03/29/Docker构建Python应用镜像/index.html">
 <meta property="og:site_name" content="TechLiving">
 <meta property="og:description" content="最近需要将Python应用程序部署上线，而用户现场的服务器基于安全原因，是不能访问外网的。Python需要访问Postgresql、Hive和ElasticSearch，需要psycopg2-binary、pyhs2、elasticsearch等插件。在测试环境下，通过pip install就能解决，但纯内网环境下，pip失去了作用。 pyhs2还依赖于cyrus-sasl-devel，有网情况下">
 <meta property="og:locale" content="zh-Hans">
-<meta property="og:updated_time" content="2018-03-29T07:24:31.438Z">
+<meta property="og:updated_time" content="2018-06-29T13:43:06.888Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="Docker构建Python应用镜像">
 <meta name="twitter:description" content="最近需要将Python应用程序部署上线，而用户现场的服务器基于安全原因，是不能访问外网的。Python需要访问Postgresql、Hive和ElasticSearch，需要psycopg2-binary、pyhs2、elasticsearch等插件。在测试环境下，通过pip install就能解决，但纯内网环境下，pip失去了作用。 pyhs2还依赖于cyrus-sasl-devel，有网情况下">
@@ -190,6 +191,26 @@
         </li>
       
         
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br />
+            
+            关于
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            标签
+          </a>
+        </li>
+      
+        
         <li class="menu-item menu-item-archives">
           <a href="/archives/" rel="section">
             
@@ -237,7 +258,7 @@
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="name" content="Liao Rui">
       <meta itemprop="description" content="">
-      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="image" content="/images/avatar.jpeg">
     </span>
 
     <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
@@ -352,6 +373,12 @@
 
     <footer class="post-footer">
       
+        <div class="post-tags">
+          
+            <a href="/tags/docker/" rel="tag"># docker</a>
+          
+        </div>
+      
 
       
       
@@ -434,6 +461,10 @@
         <div class="site-overview">
           <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
             
+              <img class="site-author-image" itemprop="image"
+                src="/images/avatar.jpeg"
+                alt="Liao Rui" />
+            
               <p class="site-author-name" itemprop="name">Liao Rui</p>
               <p class="site-description motion-element" itemprop="description">Java</p>
           </div>
@@ -453,6 +484,15 @@
 
             
 
+            
+              
+              
+              <div class="site-state-item site-state-tags">
+                <a href="/tags/index.html">
+                  <span class="site-state-item-count">6</span>
+                  <span class="site-state-item-name">标签</span>
+                </a>
+              </div>
             
 
           </nav>

@@ -68,7 +68,7 @@
 
 
 
-  <meta name="keywords" content="Hexo, NexT" />
+  <meta name="keywords" content="Kubernetes," />
 
 
 
@@ -80,13 +80,14 @@
 
 
 <meta name="description" content="本机上搭完了minikube环境，跑了几个k8s的例子，还是不满足，想在集群环境下搭建k8s，进一步学习。可是服务器是内网环境，不能用yum连接外网自动安装。 一开始根据网上教程，在github下载了最新稳定版1.10.4的kubenetes服务端安装包，主要是kubeadm、kubelet、kubectl等命令，不需要其它的软件依赖。kubeadm是初始化集群master的管理工具，可能通过ku">
+<meta name="keywords" content="Kubernetes">
 <meta property="og:type" content="article">
 <meta property="og:title" content="CentOS 7离线安装Kubernetes">
 <meta property="og:url" content="http://yoursite.com/2018/06/16/CentOS-7离线安装Kubernetes/index.html">
 <meta property="og:site_name" content="TechLiving">
 <meta property="og:description" content="本机上搭完了minikube环境，跑了几个k8s的例子，还是不满足，想在集群环境下搭建k8s，进一步学习。可是服务器是内网环境，不能用yum连接外网自动安装。 一开始根据网上教程，在github下载了最新稳定版1.10.4的kubenetes服务端安装包，主要是kubeadm、kubelet、kubectl等命令，不需要其它的软件依赖。kubeadm是初始化集群master的管理工具，可能通过ku">
 <meta property="og:locale" content="zh-Hans">
-<meta property="og:updated_time" content="2018-06-22T02:19:25.001Z">
+<meta property="og:updated_time" content="2018-06-29T13:31:51.364Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="CentOS 7离线安装Kubernetes">
 <meta name="twitter:description" content="本机上搭完了minikube环境，跑了几个k8s的例子，还是不满足，想在集群环境下搭建k8s，进一步学习。可是服务器是内网环境，不能用yum连接外网自动安装。 一开始根据网上教程，在github下载了最新稳定版1.10.4的kubenetes服务端安装包，主要是kubeadm、kubelet、kubectl等命令，不需要其它的软件依赖。kubeadm是初始化集群master的管理工具，可能通过ku">
@@ -190,6 +191,26 @@
         </li>
       
         
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br />
+            
+            关于
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            标签
+          </a>
+        </li>
+      
+        
         <li class="menu-item menu-item-archives">
           <a href="/archives/" rel="section">
             
@@ -237,7 +258,7 @@
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="name" content="Liao Rui">
       <meta itemprop="description" content="">
-      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="image" content="/images/avatar.jpeg">
     </span>
 
     <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
@@ -377,6 +398,12 @@
 
     <footer class="post-footer">
       
+        <div class="post-tags">
+          
+            <a href="/tags/Kubernetes/" rel="tag"># Kubernetes</a>
+          
+        </div>
+      
 
       
       
@@ -459,6 +486,10 @@
         <div class="site-overview">
           <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
             
+              <img class="site-author-image" itemprop="image"
+                src="/images/avatar.jpeg"
+                alt="Liao Rui" />
+            
               <p class="site-author-name" itemprop="name">Liao Rui</p>
               <p class="site-description motion-element" itemprop="description">Java</p>
           </div>
@@ -478,6 +509,15 @@
 
             
 
+            
+              
+              
+              <div class="site-state-item site-state-tags">
+                <a href="/tags/index.html">
+                  <span class="site-state-item-count">6</span>
+                  <span class="site-state-item-name">标签</span>
+                </a>
+              </div>
             
 
           </nav>

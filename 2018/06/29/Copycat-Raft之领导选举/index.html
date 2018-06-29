@@ -68,7 +68,7 @@
 
 
 
-  <meta name="keywords" content="Hexo, NexT" />
+  <meta name="keywords" content="Raft," />
 
 
 
@@ -80,6 +80,7 @@
 
 
 <meta name="description" content="Raft是一种基于日志复制的分布式一致性算法，它提供了和Paxos算法相同的功能和性能，但更容易理解并且更容易构建实际的系统。Raft将一致性算法分解成了几个关键模块，包括领导者选举、日志复制和安全性。 Raft算法定义了Follower、Candidate和Leader三个角色，服务节点可以在这三个状态进行切换。 Raft算法最著名的实现是etcd/raft和hashicorp/raft，前者是">
+<meta name="keywords" content="Raft">
 <meta property="og:type" content="article">
 <meta property="og:title" content="Copycat Raft之领导者选举">
 <meta property="og:url" content="http://yoursite.com/2018/06/29/Copycat-Raft之领导选举/index.html">
@@ -88,7 +89,7 @@
 <meta property="og:locale" content="zh-Hans">
 <meta property="og:image" content="http://yoursite.com/2018/06/29/Copycat-Raft之领导选举/raft-states.png">
 <meta property="og:image" content="http://yoursite.com/2018/06/29/Copycat-Raft之领导选举/copycat-leader%20selection.png">
-<meta property="og:updated_time" content="2018-06-29T09:42:28.412Z">
+<meta property="og:updated_time" content="2018-06-29T13:31:22.645Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="Copycat Raft之领导者选举">
 <meta name="twitter:description" content="Raft是一种基于日志复制的分布式一致性算法，它提供了和Paxos算法相同的功能和性能，但更容易理解并且更容易构建实际的系统。Raft将一致性算法分解成了几个关键模块，包括领导者选举、日志复制和安全性。 Raft算法定义了Follower、Candidate和Leader三个角色，服务节点可以在这三个状态进行切换。 Raft算法最著名的实现是etcd/raft和hashicorp/raft，前者是">
@@ -193,6 +194,26 @@
         </li>
       
         
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br />
+            
+            关于
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            标签
+          </a>
+        </li>
+      
+        
         <li class="menu-item menu-item-archives">
           <a href="/archives/" rel="section">
             
@@ -240,7 +261,7 @@
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="name" content="Liao Rui">
       <meta itemprop="description" content="">
-      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="image" content="/images/avatar.jpeg">
     </span>
 
     <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
@@ -362,6 +383,12 @@
 
     <footer class="post-footer">
       
+        <div class="post-tags">
+          
+            <a href="/tags/Raft/" rel="tag"># Raft</a>
+          
+        </div>
+      
 
       
       
@@ -440,6 +467,10 @@
         <div class="site-overview">
           <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
             
+              <img class="site-author-image" itemprop="image"
+                src="/images/avatar.jpeg"
+                alt="Liao Rui" />
+            
               <p class="site-author-name" itemprop="name">Liao Rui</p>
               <p class="site-description motion-element" itemprop="description">Java</p>
           </div>
@@ -459,6 +490,15 @@
 
             
 
+            
+              
+              
+              <div class="site-state-item site-state-tags">
+                <a href="/tags/index.html">
+                  <span class="site-state-item-count">6</span>
+                  <span class="site-state-item-name">标签</span>
+                </a>
+              </div>
             
 
           </nav>

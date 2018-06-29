@@ -68,7 +68,7 @@
 
 
 
-  <meta name="keywords" content="Hexo, NexT" />
+  <meta name="keywords" content="Spring Cloud," />
 
 
 
@@ -80,6 +80,7 @@
 
 
 <meta name="description" content="Zipkin是来自Twitter的开源分布式追踪系统，它可以应用于微服务架构的系统里，收集各个服务环节的响应时间等数据，方便定位系统故障和问题。 Zipkin的系统架构图如下： 图一 Zipkin架构  从架构图上可以看出，zipkin主要用于接收数据(Collector)，存储(Storage)，检索(API)并展示(UI)。Zipkin本身并不会直接在分布式系统里trace数据，是由brave">
+<meta name="keywords" content="Spring Cloud">
 <meta property="og:type" content="article">
 <meta property="og:title" content="Sleuth+Kafka+Zipkin+ElasticSearch链路追踪">
 <meta property="og:url" content="http://yoursite.com/2018/05/17/Sleuth-Kafka-Zipkin-ElasticSearch链路追踪/index.html">
@@ -88,7 +89,7 @@
 <meta property="og:locale" content="zh-Hans">
 <meta property="og:image" content="http://yoursite.com/2018/05/17/Sleuth-Kafka-Zipkin-ElasticSearch链路追踪/zipkin-architecture.png">
 <meta property="og:image" content="http://yoursite.com/2018/05/17/Sleuth-Kafka-Zipkin-ElasticSearch链路追踪/ImportSelector.jpeg">
-<meta property="og:updated_time" content="2018-05-18T07:54:05.803Z">
+<meta property="og:updated_time" content="2018-06-29T13:42:28.784Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="Sleuth+Kafka+Zipkin+ElasticSearch链路追踪">
 <meta name="twitter:description" content="Zipkin是来自Twitter的开源分布式追踪系统，它可以应用于微服务架构的系统里，收集各个服务环节的响应时间等数据，方便定位系统故障和问题。 Zipkin的系统架构图如下： 图一 Zipkin架构  从架构图上可以看出，zipkin主要用于接收数据(Collector)，存储(Storage)，检索(API)并展示(UI)。Zipkin本身并不会直接在分布式系统里trace数据，是由brave">
@@ -193,6 +194,26 @@
         </li>
       
         
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br />
+            
+            关于
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            标签
+          </a>
+        </li>
+      
+        
         <li class="menu-item menu-item-archives">
           <a href="/archives/" rel="section">
             
@@ -240,7 +261,7 @@
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="name" content="Liao Rui">
       <meta itemprop="description" content="">
-      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="image" content="/images/avatar.jpeg">
     </span>
 
     <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
@@ -371,6 +392,12 @@
 
     <footer class="post-footer">
       
+        <div class="post-tags">
+          
+            <a href="/tags/Spring-Cloud/" rel="tag"># Spring Cloud</a>
+          
+        </div>
+      
 
       
       
@@ -462,6 +489,10 @@
         <div class="site-overview">
           <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
             
+              <img class="site-author-image" itemprop="image"
+                src="/images/avatar.jpeg"
+                alt="Liao Rui" />
+            
               <p class="site-author-name" itemprop="name">Liao Rui</p>
               <p class="site-description motion-element" itemprop="description">Java</p>
           </div>
@@ -481,6 +512,15 @@
 
             
 
+            
+              
+              
+              <div class="site-state-item site-state-tags">
+                <a href="/tags/index.html">
+                  <span class="site-state-item-count">6</span>
+                  <span class="site-state-item-name">标签</span>
+                </a>
+              </div>
             
 
           </nav>
