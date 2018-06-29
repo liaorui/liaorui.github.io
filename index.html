@@ -232,6 +232,150 @@
   
   
   <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2018/06/29/Copycat-Raft之领导选举/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="Liao Rui">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="TechLiving">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">
+                
+                <a class="post-title-link" href="/2018/06/29/Copycat-Raft之领导选举/" itemprop="url">Copycat Raft之领导者选举</a></h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2018-06-29T09:19:22+08:00">
+                2018-06-29
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        
+          
+            <p>Raft是一种基于日志复制的分布式一致性算法，它提供了和Paxos算法相同的功能和性能，但更容易理解并且更容易构建实际的系统。Raft将一致性算法分解成了几个关键模块，包括领导者选举、日志复制和安全性。</p>
+<p>Raft算法定义了Follower、Candidate和Leader三个角色，服务节点可以在这三个状态进行切换。<br><img src="/2018/06/29/Copycat-Raft之领导选举/raft-states.png" alt=""></p>
+<p>Raft算法最著名的实现是<a href="https://github.com/coreos/etcd/tree/master/raft" target="_blank" rel="noopener">etcd/raft</a>和<a href="https://github.com/hashicorp/raft" target="_blank" rel="noopener">hashicorp/raft</a>，前者是<a href="https://github.com/coreos/etcd" target="_blank" rel="noopener">etcd</a>的实现基础，后者是<a href="https://github.com/hashicorp/consul" target="_blank" rel="noopener">consul</a>的实现基础。它们都是用Go语言实现的，更多语言实现请参见 <a href="https://raft.github.io。" target="_blank" rel="noopener">https://raft.github.io。</a></p>
+<p><a href="https://github.com/atomix/copycat" target="_blank" rel="noopener">copycat</a>是raft的一个Java实现，实现了领导者选举、日志复制、角色切换和日志压缩等功能。</p>
+<p>下面结合源码分析一下copycat对领导者选举的实现过程。</p>
+<p><img src="/2018/06/29/Copycat-Raft之领导选举/copycat-leader selection.png" alt=""></p>
+<p>通过CopycatServer.builder()方法构造CopycatServer实例，再通过bootstrap()方法启动。<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line">CopycatServer.Builder builder = CopycatServer.builder(member.clientAddress(), member.serverAddress())</span><br><span class="line">      .withType(member.type())</span><br><span class="line">      .withTransport(new NettyTransport())</span><br><span class="line">      .withStorage(Storage.builder()</span><br><span class="line">        .withStorageLevel(StorageLevel.DISK)</span><br><span class="line">        .withDirectory(new File(String.format(&quot;target/fuzz-logs/%d&quot;, member.address().hashCode())))</span><br><span class="line">        .withMaxSegmentSize(randomNumber(1024 * 1024 * 7) + (1024 * 1024))</span><br><span class="line">        .withMaxEntriesPerSegment(randomNumber(10000) + 1000)</span><br><span class="line">        .withCompactionThreads(randomNumber(4) + 1)</span><br><span class="line">        .withCompactionThreshold(Math.random() / (double) 2)</span><br><span class="line">        .withEntryBufferSize(randomNumber(10000) + 1)</span><br><span class="line">        .withFlushOnCommit(randomBoolean())</span><br><span class="line">        .withMinorCompactionInterval(Duration.ofSeconds(randomNumber(30) + 15))</span><br><span class="line">        .withMajorCompactionInterval(Duration.ofSeconds(randomNumber(60) + 60))</span><br><span class="line">        .build())</span><br><span class="line">      .withStateMachine(FuzzStateMachine::new);</span><br><span class="line"></span><br><span class="line">CopycatServer server = builder.build();</span><br><span class="line">server.serializer().disableWhitelist();</span><br><span class="line"></span><br><span class="line">server.bootstrap(member.serverAddress);</span><br></pre></td></tr></table></figure></p>
+<p>上述bootstrap()方法会调用ClusterState类的bootstrap()方法，注意所有ServerMember的type是ACTIVE类型的。<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">// Create a set of cluster members, excluding the local member which is joining a cluster.</span><br><span class="line">Set&lt;Member&gt; activeMembers = cluster.stream()</span><br><span class="line">    .filter(m -&gt; !m.equals(member.serverAddress()))</span><br><span class="line">    .map(m -&gt; new ServerMember(Member.Type.ACTIVE, m, null, member.updated()))</span><br><span class="line">    .collect(Collectors.toSet());</span><br></pre></td></tr></table></figure></p>
+<p>ClusterState的join()方法里继续调用:<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">// Transition the server to the appropriate state for the local member type.</span><br><span class="line">context.transition(member.type());</span><br></pre></td></tr></table></figure></p>
+<p>这里的context是ServerContext类的实例，member.type()是ACTIVE。transition()方法实现如下：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br></pre></td><td class="code"><pre><span class="line">protected void transition(Member.Type type) &#123;</span><br><span class="line">    switch (type) &#123;</span><br><span class="line">      case ACTIVE:</span><br><span class="line">        if (!(state instanceof ActiveState)) &#123;</span><br><span class="line">          transition(CopycatServer.State.FOLLOWER);</span><br><span class="line">        &#125;</span><br><span class="line">        break;</span><br><span class="line">      case PASSIVE:</span><br><span class="line">        if (this.state.type() != CopycatServer.State.PASSIVE) &#123;</span><br><span class="line">          transition(CopycatServer.State.PASSIVE);</span><br><span class="line">        &#125;</span><br><span class="line">        break;</span><br><span class="line">      case RESERVE:</span><br><span class="line">        if (this.state.type() != CopycatServer.State.RESERVE) &#123;</span><br><span class="line">          transition(CopycatServer.State.RESERVE);</span><br><span class="line">        &#125;</span><br><span class="line">        break;</span><br><span class="line">      default:</span><br><span class="line">        if (this.state.type() != CopycatServer.State.INACTIVE) &#123;</span><br><span class="line">          transition(CopycatServer.State.INACTIVE);</span><br><span class="line">        &#125;</span><br><span class="line">        break;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">/**</span><br><span class="line">   * Transition handler.</span><br><span class="line">   */</span><br><span class="line">public void transition(CopycatServer.State state) &#123;</span><br><span class="line">    ......</span><br><span class="line">    this.state = createState(state);</span><br><span class="line">    this.state.open().get();</span><br><span class="line">.   .....</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">/**</span><br><span class="line">   * Creates an internal state for the given state type.</span><br><span class="line">   */</span><br><span class="line">private AbstractState createState(CopycatServer.State state) &#123;</span><br><span class="line">    switch (state) &#123;</span><br><span class="line">      case INACTIVE:</span><br><span class="line">        return new InactiveState(this);</span><br><span class="line">      case RESERVE:</span><br><span class="line">        return new ReserveState(this);</span><br><span class="line">      case PASSIVE:</span><br><span class="line">        return new PassiveState(this);</span><br><span class="line">      case FOLLOWER:</span><br><span class="line">        return new FollowerState(this);</span><br><span class="line">      case CANDIDATE:</span><br><span class="line">        return new CandidateState(this);</span><br><span class="line">      case LEADER:</span><br><span class="line">        return new LeaderState(this);</span><br><span class="line">      default:</span><br><span class="line">        throw new AssertionError();</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>ACTIVE类型下对应FOLLOWER的状态，通过createState()创建了FollowerState对象，然后调用FollowerState对象的open()方法。FollowerState会调用sendPollRequest()方法去集群上检查所有成员的状态，并决定该CopycatServer是否切换到Candidate角色。</p>
+<p>此时集群还没有其它的成员，第一个CopycatServer将自动切换到Candidata角色，调用context.transition(CopycatServer.State.CANDIDATE)方法。</p>
+<p>通过transition(CANDIDATE)生成了CandidataState对象，再通过open()调用sendVoteRequests()方法发起投票。<br>该候选人会先把自己的任期号term加1。<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">// When the election timer is reset, increment the current term and restart the election.</span><br><span class="line">context.setTerm(context.getTerm() + 1).setLastVotedFor(context.getCluster().member().id());</span><br></pre></td></tr></table></figure></p>
+<p>如果集群还没有其它成员，则该候选人自动成为leader。<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">// If there are no other members in the cluster, immediately transition to leader.</span><br><span class="line">if (votingMembers.isEmpty()) &#123;</span><br><span class="line">  LOGGER.trace(&quot;&#123;&#125; - Single member cluster. Transitioning directly to leader.&quot;, context.getCluster().member().address());</span><br><span class="line">  context.transition(CopycatServer.State.LEADER);</span><br><span class="line">  return;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>如果集群里有其它成员，则向集群所有成员发送投票请求。<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br></pre></td><td class="code"><pre><span class="line">// Send vote requests to all nodes. The vote request that is sent</span><br><span class="line">// to this node will be automatically successful.</span><br><span class="line">// First check if the quorum is null. If the quorum isn&apos;t null then that</span><br><span class="line">// indicates that another vote is already going on.</span><br><span class="line">final Quorum quorum = new Quorum(context.getClusterState().getQuorum(), (elected) -&gt; &#123;</span><br><span class="line">  complete.set(true);</span><br><span class="line">  if (elected) &#123;</span><br><span class="line">    context.transition(CopycatServer.State.LEADER);</span><br><span class="line">  &#125; else &#123;</span><br><span class="line">    context.transition(CopycatServer.State.FOLLOWER);</span><br><span class="line">  &#125;</span><br><span class="line">&#125;);</span><br><span class="line"></span><br><span class="line">// Once we got the last log term, iterate through each current member</span><br><span class="line">// of the cluster and vote each member for a vote.</span><br><span class="line">for (ServerMember member : votingMembers) &#123;</span><br><span class="line">  LOGGER.debug(&quot;&#123;&#125; - Requesting vote from &#123;&#125; for term &#123;&#125;&quot;, context.getCluster().member().address(), member, context.getTerm());</span><br><span class="line">  VoteRequest request = VoteRequest.builder()</span><br><span class="line">    .withTerm(context.getTerm())</span><br><span class="line">    .withCandidate(context.getCluster().member().id())</span><br><span class="line">    .withLogIndex(lastIndex)</span><br><span class="line">    .withLogTerm(lastTerm)</span><br><span class="line">    .build();</span><br><span class="line"></span><br><span class="line">  context.getConnections().getConnection(member.serverAddress()).thenAccept(connection -&gt; &#123;</span><br><span class="line">    connection.&lt;VoteRequest, VoteResponse&gt;sendAndReceive(request).whenCompleteAsync((response, error) -&gt; &#123;</span><br><span class="line">      context.checkThread();</span><br><span class="line">      if (isOpen() &amp;&amp; !complete.get()) &#123;</span><br><span class="line">        if (error != null) &#123;</span><br><span class="line">          LOGGER.warn(error.getMessage());</span><br><span class="line">          quorum.fail();</span><br><span class="line">        &#125; else &#123;</span><br><span class="line">          if (response.term() &gt; context.getTerm()) &#123;</span><br><span class="line">            LOGGER.trace(&quot;&#123;&#125; - Received greater term from &#123;&#125;&quot;, context.getCluster().member().address(), member);</span><br><span class="line">            context.setTerm(response.term());</span><br><span class="line">            complete.set(true);</span><br><span class="line">            context.transition(CopycatServer.State.FOLLOWER);</span><br><span class="line">          &#125; else if (!response.voted()) &#123;</span><br><span class="line">            LOGGER.trace(&quot;&#123;&#125; - Received rejected vote from &#123;&#125;&quot;, context.getCluster().member().address(), member);</span><br><span class="line">            quorum.fail();</span><br><span class="line">          &#125; else if (response.term() != context.getTerm()) &#123;</span><br><span class="line">            LOGGER.trace(&quot;&#123;&#125; - Received successful vote for a different term from &#123;&#125;&quot;, context.getCluster().member().address(), member);</span><br><span class="line">            quorum.fail();</span><br><span class="line">          &#125; else &#123;</span><br><span class="line">            LOGGER.trace(&quot;&#123;&#125; - Received successful vote from &#123;&#125;&quot;, context.getCluster().member().address(), member);</span><br><span class="line">            quorum.succeed();</span><br><span class="line">          &#125;</span><br><span class="line">        &#125;</span><br><span class="line">      &#125;</span><br><span class="line">    &#125;, context.getThreadContext().executor());</span><br><span class="line">  &#125;);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>如果该候选人赢得了选举，则通过context.transition(CopycatServer.State.LEADER)成为领导者，否则继续回退到FOLLOWER角色。</p>
+<p>当一个候选人从整个集群的大多数服务器节点获得了针对同一个任期号的选票，那么他就赢得了这次选举并成为领导人。每一个服务器最多会对一个任期号投出一张选票，按照先来先服务的原则。要求大多数选票的规则确保了最多只会有一个候选人赢得此次选举。一旦候选人赢得选举，他就立即成为领导人。然后他会向其他的服务器发送心跳消息来建立自己的权威并且阻止新的领导人的产生。</p>
+<p>在等待投票的时候，候选人可能会从其他的服务器接收到声明它是领导人的附加日志项RPC。如果这个领导人的任期号（包含在此次的RPC中）不小于候选人当前的任期号，那么候选人会承认领导人合法并回到跟随者状态。如果此次RPC中的任期号比自己小，那么候选人就会拒绝这次的RPC并且继续保持候选人状态。</p>
+<p>有一种可能的结果是候选人既没有赢得选举也没有输：如果有多个跟随者同时成为候选人，那么选票可能会被瓜分以至于没有候选人可以赢得大多数人的支持。当这种情况发生的时候，每一个候选人都会超时，然后通过增加当前任期号来开始一轮新的选举。然而，没有其他机制的话，选票可能会被无限的重复瓜分。</p>
+<p>Raft算法使用随机选举超时时间的方法来确保很少会发生选票瓜分的情况，就算发生也能很快的解决。为了阻止选票起初就被瓜分，选举超时时间是从一个固定的区间（例如 150-300 毫秒）随机选择。这样可以把服务器都分散开以至于在大多数情况下只有一个服务器会选举超时；然后他赢得选举并在其他服务器超时之前发送心跳包。同样的机制被用在选票瓜分的情况下。每一个候选人在开始一次选举的时候会重置一个随机的选举超时时间，然后在超时时间内等待投票的结果；这样减少了在新的选举中另外的选票瓜分的可能性。</p>
+<p>当候选人成为领导者时，会创建LeaderState实例，并调用open方法，写入InitializeEntry日志，然后调用context.getStateMachine().apply(resultIndex)在状态机中应用该状态。最后通过startAppendTimer()循环调用LeaderAppender类的appendMembers()方法，告诉其它节点“我是领导者”。<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br></pre></td><td class="code"><pre><span class="line">@Override</span><br><span class="line">protected void appendEntries(MemberState member) &#123;</span><br><span class="line">    // Prevent recursive, asynchronous appends from being executed if the appender has been closed.</span><br><span class="line">    if (!open)</span><br><span class="line">      return;</span><br><span class="line"></span><br><span class="line">    // If prior requests to the member have failed, build an empty append request to send to the member</span><br><span class="line">    // to prevent having to read from disk to configure, install, or append to an unavailable member.</span><br><span class="line">    if (member.getFailureCount() &gt;= MINIMUM_BACKOFF_FAILURE_COUNT) &#123;</span><br><span class="line">      // To prevent the leader from unnecessarily attempting to connect to a down follower on every heartbeat,</span><br><span class="line">      // use exponential backoff to back off up to 60 second heartbeat intervals.</span><br><span class="line">      if (System.currentTimeMillis() - member.getHeartbeatStartTime() &gt; Math.min(heartbeatInterval * Math.pow(2, member.getFailureCount()), MAX_HEARTBEAT_WAIT)) &#123;</span><br><span class="line">        sendAppendRequest(member, buildAppendEmptyRequest(member));</span><br><span class="line">      &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    // If the member term is less than the current term or the member&apos;s configuration index is less</span><br><span class="line">    // than the local configuration index, send a configuration update to the member.</span><br><span class="line">    // Ensure that only one configuration attempt per member is attempted at any given time by storing the</span><br><span class="line">    // member state in a set of configuring members.</span><br><span class="line">    // Once the configuration is complete sendAppendRequest will be called recursively.</span><br><span class="line">    else if (member.getConfigTerm() &lt; context.getTerm() || member.getConfigIndex() &lt; context.getClusterState().getConfiguration().index()) &#123;</span><br><span class="line">      if (member.canConfigure()) &#123;</span><br><span class="line">        sendConfigureRequest(member, buildConfigureRequest(member));</span><br><span class="line">      &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    // If the member is a reserve or passive member, send an empty AppendRequest to it.</span><br><span class="line">    else if (member.getMember().type() == Member.Type.RESERVE || member.getMember().type() == Member.Type.PASSIVE) &#123;</span><br><span class="line">      if (member.canAppend()) &#123;</span><br><span class="line">        sendAppendRequest(member, buildAppendEmptyRequest(member));</span><br><span class="line">      &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    // If the member&apos;s current snapshot index is less than the latest snapshot index and the latest snapshot index</span><br><span class="line">    // is less than the nextIndex, send a snapshot request.</span><br><span class="line">    else if (member.getMember().type() == Member.Type.ACTIVE &amp;&amp; context.getSnapshotStore().currentSnapshot() != null</span><br><span class="line">      &amp;&amp; context.getSnapshotStore().currentSnapshot().index() &gt;= member.getNextIndex()</span><br><span class="line">      &amp;&amp; context.getSnapshotStore().currentSnapshot().index() &gt; member.getSnapshotIndex()) &#123;</span><br><span class="line">      if (member.canInstall()) &#123;</span><br><span class="line">        sendInstallRequest(member, buildInstallRequest(member));</span><br><span class="line">      &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    // If no AppendRequest is already being sent, send an AppendRequest.</span><br><span class="line">    else if (member.canAppend()) &#123;</span><br><span class="line">      sendAppendRequest(member, buildAppendRequest(member, context.getLog().lastIndex()));</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br></pre></td></tr></table></figure></p>
+<p>其它节点收到消息后，则以Follower身份不断接收Leader的消息，进行日志同步复制，Copycat的领导者选举过程到此结束。</p>
+<p>关于raft算法的更多细节，可以参考 <a href="https://github.com/maemual/raft-zh_cn/blob/master/raft-zh_cn.md" target="_blank" rel="noopener">https://github.com/maemual/raft-zh_cn/blob/master/raft-zh_cn.md</a> 这篇文章。</p>
+<p>后面再分析日志同步和日志压缩过程。</p>
+
+          
+        
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+
+      
+
+      
+
+      
+      
+        <div class="post-eof"></div>
+      
+
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+    
+      
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
     <link itemprop="mainEntityOfPage" href="http://yoursite.com/2018/06/16/CentOS-7离线安装Kubernetes/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -1513,131 +1657,6 @@
 
 
     
-      
-
-  
-
-  
-  
-  
-
-  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
-  
-  
-  
-  <div class="post-block">
-    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2018/03/04/Play-Framework-Anorm返回class对象/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="name" content="Liao Rui">
-      <meta itemprop="description" content="">
-      <meta itemprop="image" content="/images/avatar.gif">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="TechLiving">
-    </span>
-
-    
-      <header class="post-header">
-
-        
-        
-          <h1 class="post-title" itemprop="name headline">
-                
-                <a class="post-title-link" href="/2018/03/04/Play-Framework-Anorm返回class对象/" itemprop="url">Play Framework Anorm返回class对象</a></h1>
-        
-
-        <div class="post-meta">
-          <span class="post-time">
-            
-              <span class="post-meta-item-icon">
-                <i class="fa fa-calendar-o"></i>
-              </span>
-              
-                <span class="post-meta-item-text">发表于</span>
-              
-              <time title="创建于" itemprop="dateCreated datePublished" datetime="2018-03-04T17:42:08+08:00">
-                2018-03-04
-              </time>
-            
-
-            
-
-            
-          </span>
-
-          
-
-          
-            
-          
-
-          
-          
-
-          
-
-          
-
-          
-
-        </div>
-      </header>
-    
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-      
-
-      
-        
-          
-            <p>Scala是构建在JVM上的函数式编程语言，在大数据领域开始展现出独特的优势，Kafka，Spark，Flink组件等都是用Scala开发的。而在web开发领域，<a href="https://github.com/playframework/playframework" target="_blank" rel="noopener">Play Framework</a>是最优秀的Scala响应式编程web框架。</p>
-<p>Play Framework支持Slick和Anorm两种方式操作数据库。Slick支持Functional Relational Mapping (FRM)的访问方式，类似于Java平台的ORM。Anorm相对Slick更简单，直接用SQL语句交互，并提供了结果集的类型转换。</p>
-<p>Anorm如何将查询结果转换成Scala case class对象，<a href="https://www.playframework.com/documentation/2.6.x/ScalaAnorm#Generated-parsers" target="_blank" rel="noopener">官方文档</a>介绍的不是很详细，用了Macro.namedParser，宏定义导致语法错误没办法被IDE编译阶段发现，给开发调度带来不便。<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">val parser: RowParser[Info] = Macro.parser[Info](&quot;a_name&quot;, &quot;creation&quot;)</span><br><span class="line">/* Generated as:</span><br><span class="line">get[String](&quot;a_name&quot;) ~ get[Option[Int]](&quot;creation&quot;) map &#123;</span><br><span class="line">  case name ~ year =&gt; Info(name, year)</span><br><span class="line">&#125;</span><br><span class="line">*/</span><br></pre></td></tr></table></figure></p>
-<p>其实可以直接去掉Macro.parser，用以下语法：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">val parser: RowParser[Info] = get[String](&quot;a_name&quot;) ~ get[Option[Int]](&quot;creation&quot;) map &#123;</span><br><span class="line">  case name ~ year =&gt; Info(name, year)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
-<p>这样也方便在map里对name和year做数据转换，例如对year进行日期格式化或加减天数，而在上面的宏定义语法里是没办法支持的。</p>
-
-          
-        
-      
-    </div>
-    
-    
-    
-
-    
-
-    
-
-    
-
-    <footer class="post-footer">
-      
-
-      
-
-      
-
-      
-      
-        <div class="post-eof"></div>
-      
-
-    </footer>
-  </div>
-  
-  
-  
-  </article>
-
-
-    
   </section>
 
   
@@ -1688,7 +1707,7 @@
               
                 <a href="/archives/">
               
-                  <span class="site-state-item-count">16</span>
+                  <span class="site-state-item-count">17</span>
                   <span class="site-state-item-name">日志</span>
                 </a>
               </div>
