@@ -409,181 +409,6 @@
   
   
   <div class="post-block">
-    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2018/06/16/CentOS-7离线安装Kubernetes/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="name" content="Liao Rui">
-      <meta itemprop="description" content="">
-      <meta itemprop="image" content="/images/avatar.jpeg">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="TechLiving">
-    </span>
-
-    
-      <header class="post-header">
-
-        
-        
-          <h1 class="post-title" itemprop="name headline">
-                
-                <a class="post-title-link" href="/2018/06/16/CentOS-7离线安装Kubernetes/" itemprop="url">CentOS 7离线安装Kubernetes</a></h1>
-        
-
-        <div class="post-meta">
-          <span class="post-time">
-            
-              <span class="post-meta-item-icon">
-                <i class="fa fa-calendar-o"></i>
-              </span>
-              
-                <span class="post-meta-item-text">发表于</span>
-              
-              <time title="创建于" itemprop="dateCreated datePublished" datetime="2018-06-16T07:07:18+08:00">
-                2018-06-16
-              </time>
-            
-
-            
-
-            
-          </span>
-
-          
-
-          
-            
-              <span class="post-comments-count">
-                <span class="post-meta-divider">|</span>
-                <span class="post-meta-item-icon">
-                  <i class="fa fa-comment-o"></i>
-                </span>
-                <a href="/2018/06/16/CentOS-7离线安装Kubernetes/#comments" itemprop="discussionUrl">
-                  <span class="post-comments-count valine-comment-count" data-xid="/2018/06/16/CentOS-7离线安装Kubernetes/" itemprop="commentCount"></span>
-                </a>
-              </span>
-            
-          
-
-          
-          
-
-          
-
-          
-
-          
-
-        </div>
-      </header>
-    
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-      
-
-      
-        
-          
-            <p>本机上搭完了minikube环境，跑了几个k8s的例子，还是不满足，想在集群环境下搭建k8s，进一步学习。可是服务器是内网环境，不能用yum连接外网自动安装。</p>
-<p>一开始根据网上教程，在<a href="https://github.com/kubernetes/kubernetes/blob/master/CHANGELOG-1.10.md#downloads-for-v1104" target="_blank" rel="noopener">github</a>下载了最新稳定版1.10.4的kubenetes服务端安装包，主要是kubeadm、kubelet、kubectl等命令，不需要其它的软件依赖。kubeadm是初始化集群master的管理工具，可能通过kubeadm init快速建立master。kubelet是调度k8s任务和监控集群状态的工具。kubectl是与集群交互的命令行工具。</p>
-<p>还要下载etcd的二进制程序后，在服务器上执行kubeadm init，直接提示获取最新k8s版本信息失败。</p>
-<p>原来kubeadm运行参数中没有指定k8s版本时，会自动联网获取最新版本信息。而服务器是不能连外网的，需要指定–kubernetes-version:<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">kubeadm init --pod-network-cidr=10.244.0.0/16 --kubernetes-version v1.10.0</span><br></pre></td></tr></table></figure></p>
-<p>本地肯定也要下载v1.10.0版本的依赖镜像。按照<a href="https://github.com/kubernetes/kubernetes/blob/master/CHANGELOG-1.10.md#downloads-for-v1104" target="_blank" rel="noopener">github</a>的指导，下载如下镜像：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line">k8s.gcr.io/kube-proxy-amd64                v1.10.0             bfc21aadc7d3        2 months ago        97MB</span><br><span class="line">k8s.gcr.io/kube-controller-manager-amd64   v1.10.0             ad86dbed1555        2 months ago        148MB</span><br><span class="line">k8s.gcr.io/kube-apiserver-amd64            v1.10.0             af20925d51a3        2 months ago        225MB</span><br><span class="line">k8s.gcr.io/kube-scheduler-amd64            v1.10.0             704ba848e69a        2 months ago        50.4MB</span><br><span class="line">weaveworks/weave-npc                       2.2.1               26d868a4eb75        3 months ago        46.6MB</span><br><span class="line">weaveworks/weave-kube                      2.2.1               86e2da7dd27b        3 months ago        93.8MB</span><br><span class="line">k8s.gcr.io/etcd-amd64                      3.1.12              52920ad46f5b        3 months ago        193MB</span><br><span class="line">k8s.gcr.io/kubernetes-dashboard-amd64      v1.8.3              0c60bcf89900        4 months ago        102MB</span><br><span class="line">k8s.gcr.io/k8s-dns-dnsmasq-nanny-amd64     1.14.8              c2ce1ffb51ed        5 months ago        41MB</span><br><span class="line">k8s.gcr.io/k8s-dns-sidecar-amd64           1.14.8              6f7f2dc7fab5        5 months ago        42.2MB</span><br><span class="line">k8s.gcr.io/k8s-dns-kube-dns-amd64          1.14.8              80cc5ea4b547        5 months ago        50.5MB</span><br><span class="line">k8s.gcr.io/pause-amd64                     3.1                 da86e6ba6ca1        5 months ago        742kB</span><br><span class="line">quay.io/coreos/flannel                     v0.10.0-amd64</span><br><span class="line">f0fad859c909        4 months ago        44.6MB</span><br><span class="line">quay.io/kubernetes-ingress-controller/nginx-ingress-controller      0.15.0</span><br><span class="line">c46bc3e1b53c        5 weeks ago         265MB</span><br><span class="line">gcr.io/google_containers/defaultbackend               1.4</span><br><span class="line">846921f0fe0e        7 months ago        4.84MB</span><br></pre></td></tr></table></figure></p>
-<p>具体方法是，登录本地的minikube:<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line">minikube ssh</span><br><span class="line"></span><br><span class="line">docker pull k8s.gcr.io/kube-proxy-amd64:v1.10.0</span><br><span class="line">docker pull k8s.gcr.io/kube-controller-manager-amd64:v1.10.0</span><br><span class="line">docker pull k8s.gcr.io/kube-apiserver-amd64:v1.10.0</span><br><span class="line">docker pull k8s.gcr.io/kube-scheduler-amd64:v1.10.0</span><br><span class="line">docker pull weaveworks/weave-npc:2.2.1 </span><br><span class="line">docker pull weaveworks/weave-kube:2.2.1</span><br><span class="line">docker pull k8s.gcr.io/etcd-amd64:3.1.12</span><br><span class="line">docker pull k8s.gcr.io/kubernetes-dashboard-amd64:v1.8.3</span><br><span class="line">docker pull k8s.gcr.io/k8s-dns-dnsmasq-nanny-amd64:1.14.8</span><br><span class="line">docker pull k8s.gcr.io/k8s-dns-sidecar-amd64:1.14.8</span><br><span class="line">docker pull k8s.gcr.io/k8s-dns-kube-dns-amd64:1.14.8 </span><br><span class="line">docker pull k8s.gcr.io/pause-amd64:3.1</span><br><span class="line">docker pull quay.io/coreos/flannel:v0.10.0-amd64</span><br><span class="line">docker pull quay.io/kubernetes-ingress-controller/nginx-ingress-controller:0.15.0</span><br><span class="line">docker pull gcr.io/google_containers/defaultbackend:1.4</span><br></pre></td></tr></table></figure></p>
-<p>因为需要翻墙，需要配置minikube的shadowsoks代理。有两种代理方式：1、命令行代理：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">minikube start --docker-env=HTTP_PROXY=http://192.168.99.1:1087 \</span><br><span class="line">               --docker-env=HTTPS_PROXY=https://192.168.99.1:1087</span><br></pre></td></tr></table></figure></p>
-<p>2、编辑 ~/.minikube/machines/minikube/config.json中的HostOptions.EngineOptions.Env配置，加入：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">&quot;Env&quot;: [</span><br><span class="line">    &quot;HTTP_PROXY=http://192.168.99.1:1087&quot;,</span><br><span class="line">    &quot;HTTPS_PROXY=http://192.168.99.1:1087&quot;,</span><br><span class="line">    &quot;NO_PROXY=192.168.99.100/24&quot;</span><br><span class="line">]</span><br></pre></td></tr></table></figure></p>
-<p>说明一下，minikube虚拟环境的IP默认是192.168.99.100，宿主机（也是本地电脑）的IP默认是192.168.99.1。所以需要以上设置ss代理。</p>
-<p>minikube环境里的docker全部pull完毕后，再依次执行docker save。<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">docker save k8s.gcr.io/kube-proxy-amd64:v1.10.0 &gt; kube-proxy-amd64</span><br><span class="line">......</span><br></pre></td></tr></table></figure></p>
-<p>全部导出来后打包成k8s.tar.gz。</p>
-<p>还要从minikube里导出到本地电脑磁盘上：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">scp -i $(minikube ssh-key) docker@$(minikube ip):/home/docker/k8s.tar.gz k8s.tar.gz</span><br></pre></td></tr></table></figure></p>
-<p>然后上传到服务器上，依次执行docker load:<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">docker load &lt; kube-proxy-amd64</span><br><span class="line">......</span><br></pre></td></tr></table></figure></p>
-<p>用docker images查看镜像，如果出现REPOSITORY和TAG为none，重新打一下标签：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">docker tag ad86dbed1555 k8s.gcr.io/kube-controller-manager-amd64:v1.10.0</span><br></pre></td></tr></table></figure></p>
-<p>如果服务器上还没有安装docker程序，可以在本地用createrepo构造docker的yum安装依赖包。<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br></pre></td><td class="code"><pre><span class="line"># 服务器上查看centos版本cat /etc/redhat-release，然后本地构建相同版本的centos系统</span><br><span class="line">docker pull centos:7.2.1511</span><br><span class="line"></span><br><span class="line"># 查看image id</span><br><span class="line">docker images</span><br><span class="line"></span><br><span class="line"># 进入centos环境</span><br><span class="line">docker run -ti &lt;IMAGE ID&gt; /bin/bash</span><br><span class="line"></span><br><span class="line"># 下载yum依赖包</span><br><span class="line">yum -y install yum-utils</span><br><span class="line">repotrack -a x86_64 -p yum/local createrepo</span><br><span class="line">repotrack -a x86_64 -p yum/local libgudev1</span><br><span class="line">repotrack -a x86_64 -p yum/local systemd-sysv</span><br><span class="line">repotrack -a x86_64 -p yum/local dracut-network</span><br><span class="line">repotrack -a x86_64 -p yum/local dracut-config-rescue</span><br><span class="line">repotrack -a x86_64 -p yum/local systemd-python</span><br><span class="line">yum-config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo</span><br><span class="line">repotrack -a x86_64 -p yum/local docker-ce</span><br><span class="line"></span><br><span class="line">tar czvf centos7-docker-yum.gz yum</span><br><span class="line"></span><br><span class="line"># 本地电脑执行docker ps，查看container id</span><br><span class="line">docker cp &lt;CONTAINER ID&gt;:/root/centos7-docker-yum.gz .</span><br></pre></td></tr></table></figure></p>
-<p>把所有依赖包导出来，然后上传服务器。<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line">tar xzvf centos7-docker-yum.gz</span><br><span class="line"></span><br><span class="line">vi /etc/yum.repos.d/CentOS-Local.repo</span><br><span class="line">[Local]</span><br><span class="line">name=Local Yum</span><br><span class="line">baseurl=file:///root/yum/</span><br><span class="line">gpgcheck=0</span><br><span class="line">enabled=1</span><br><span class="line"></span><br><span class="line">createrepo /root/yum</span><br><span class="line">yum makecache</span><br><span class="line"></span><br><span class="line">yum -y install docker-ce</span><br><span class="line"></span><br><span class="line">service docker start</span><br></pre></td></tr></table></figure></p>
-<p>这样服务器就离线安装好docker了。</p>
-<p>k8s镜像准备好后，再次执行 kubeadm init –pod-network-cidr=10.244.0.0/16  –kubernetes-version v1.10.0， 发现还是卡住了：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">......</span><br><span class="line">[init] This might take a minute or longer if the control plane images have to be pulled.</span><br></pre></td></tr></table></figure></p>
-<p>查看tail -f /var/log/messages，发现一直输出：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">kubelet_node_status.go:271] Setting node annotation to enable volume controller attach/detach</span><br></pre></td></tr></table></figure></p>
-<p>网上怎么查资料，都找不到解决办法。</p>
-<p>网上也有人打包好了k8s所有的安装包和镜像，并做成了shell脚本自动化安装，售价50元。本着程序员爱折腾不服气的精神，继续想办法。</p>
-<p>看到有人用yum安装kubelet、kubeadm和kubectl，突然想到也可以本地用docker构建yum依赖包。<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"># 服务器上查看centos版本cat /etc/redhat-release，然后本地构建相同的centos系统</span><br><span class="line">docker pull centos:7.2.1511</span><br><span class="line"></span><br><span class="line"># 查看image id</span><br><span class="line">docker images</span><br><span class="line"></span><br><span class="line"># 进入centos环境</span><br><span class="line">docker run -ti &lt;IMAGE ID&gt; /bin/bash</span><br><span class="line"></span><br><span class="line"># 下载依赖包</span><br><span class="line">repotrack -a x86_64 -p k8s kubelet kubeadm kubectl</span><br><span class="line">或者 yum -y install --downloadonly --downloaddir=k8s kubelet kubeadm kubectl</span><br></pre></td></tr></table></figure></p>
-<p>从docker里导出来，上传到服务器。并在服务器上重新构建yum本地仓库，然后安装yum install -y kubelet kubeadm kubectl。(具体步骤见文中离线安装docker部分)</p>
-<p>安装完成后，生成kubelet的systemctl脚本：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">systemctl enable kubelet</span><br></pre></td></tr></table></figure></p>
-<p>此时不要systemctl start kubelet，肯定会失败，还需要修改默认配置。</p>
-<p>编辑/etc/systemd/system/kubelet.service.d/10-kubeadm.conf。<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">[Service]</span><br><span class="line">......</span><br><span class="line">Environment=&quot;KUBELET_CGROUP_ARGS=--cgroup-driver=cgroupfs&quot;</span><br><span class="line">......</span><br></pre></td></tr></table></figure></p>
-<p>把cgroup-drive改成cgroupfs，跟docker的cgroup促成一致。</p>
-<p>以上全部准备好后，再次执行 kubeadm init –pod-network-cidr=10.244.0.0/16  –kubernetes-version v1.10.0，总算看到成功信息了：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line"># kubeadm init --pod-network-cidr=10.244.0.0/16  --kubernetes-version v1.10.0 </span><br><span class="line"></span><br><span class="line">......</span><br><span class="line">our Kubernetes master has initialized successfully!</span><br><span class="line"></span><br><span class="line">To start using your cluster, you need to run the following as a regular user:</span><br><span class="line"></span><br><span class="line">  mkdir -p $HOME/.kube</span><br><span class="line">  sudo cp -i /etc/kubernetes/admin.conf $HOME/.kube/config</span><br><span class="line">  sudo chown $(id -u):$(id -g) $HOME/.kube/config</span><br><span class="line"></span><br><span class="line">You should now deploy a pod network to the cluster.</span><br><span class="line">Run &quot;kubectl apply -f [podnetwork].yaml&quot; with one of the options listed at:</span><br><span class="line">  https://kubernetes.io/docs/concepts/cluster-administration/addons/</span><br><span class="line"></span><br><span class="line">You can now join any number of machines by running the following on each node</span><br><span class="line">as root:</span><br><span class="line"></span><br><span class="line">  kubeadm join 10.95.134.84:6443 --token 6h86uf.w4fybn0usz2e8etm --discovery-token-ca-cert-hash sha256:91be4a5060fcdd7d4a8bf7de7b468154401cce4b5dfd0d6aba6ec23a6e36000e</span><br></pre></td></tr></table></figure></p>
-<p>master就算安装成功了，接下来安装cluster。</p>
-<p>注意，增加–pod-network-cidr参数，如果不使用，则flannel pod启动后会出现“failed to register network: failed to acquire lease: node “xxxxxx” pod cidr not assigned”错误。</p>
-<p>同样在其它cluster服务器上用yum本地安装kubelet、kubeadm、kubectl，并编辑好/etc/systemd/system/kubelet.service.d/10-kubeadm.conf。<br>然后执行:<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">kubeadm join 10.95.134.84:6443 --token 6h86uf.w4fybn0usz2e8etm --discovery-token-ca-cert-hash sha256:91be4a5060fcdd7d4a8bf7de7b468154401cce4b5dfd0d6aba6ec23a6e36000e</span><br></pre></td></tr></table></figure></p>
-<p>会提示加入到cluster成功。</p>
-<p>然后把master机器上的/etc/kubernetes/admin.conf传到cluster机器上，并在cluster上执行:<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">mkdir -p $HOME/.kube</span><br><span class="line">sudo cp -i /etc/kubernetes/admin.conf $HOME/.kube/config</span><br><span class="line">sudo chown $(id -u):$(id -g) $HOME/.kube/config</span><br></pre></td></tr></table></figure></p>
-<p>这样就可以在cluster上也查看pods、services等状态了。</p>
-<p>在master或cluster机器上执行：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">kubectl get nodes</span><br></pre></td></tr></table></figure></p>
-<p>看到如下信息：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">NAME                   STATUS    ROLES     AGE       VERSION</span><br><span class="line">server01               Ready     &lt;none&gt;    9h        v1.10.4</span><br><span class="line">server02               Ready     master    9h        v1.10.4</span><br><span class="line">server03               Ready     &lt;none&gt;    8h        v1.10.4</span><br></pre></td></tr></table></figure></p>
-<p>注意，cluster节点上也需要本地导入依赖镜像，否则master上部署服务时，cluster会因为没有依赖镜像而尝试从网络下载。</p>
-<p>安装flannel服务：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">kubectl apply -f https://raw.githubusercontent.com/coreos/flannel/master/Documentation/kube-flannel.yml</span><br></pre></td></tr></table></figure></p>
-<p>安装dashboard：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">kubectl apply -f https://raw.githubusercontent.com/kubernetes/dashboard/master/src/deploy/recommended/kubernetes-dashboard.yaml</span><br></pre></td></tr></table></figure></p>
-<p>安装ingress-nginx服务：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/master/deploy/mandatory.yaml</span><br></pre></td></tr></table></figure></p>
-<p>注意，服务器不能联网，可以将kube-flannel.yml、kubernetes-dashboard.yaml、mandatory.yaml三个配置文件下载到本地，再上传到服务器进行本地安装。</p>
-<p>最终查看pods状态如下：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line">[root@bd04 xxxx]# kubectl get pods --all-namespaces</span><br><span class="line">NAMESPACE       NAME                                           READY     STATUS    RESTARTS   AGE</span><br><span class="line">ingress-nginx   default-http-backend-5c6d95c48-tblk9           1/1       Running   0          9h</span><br><span class="line">ingress-nginx   nginx-ingress-controller-58c9df5856-sjs79      1/1       Running   0          9h</span><br><span class="line">kube-system     etcd-bd04.ty.lgy.360es.cn                      1/1       Running   6          1d</span><br><span class="line">kube-system     kube-apiserver-bd04.ty.lgy.360es.cn            1/1       Running   6          1d</span><br><span class="line">kube-system     kube-controller-manager-bd04.ty.lgy.360es.cn   1/1       Running   0          10h</span><br><span class="line">kube-system     kube-dns-86f4d74b45-5vczm                      3/3       Running   3          1d</span><br><span class="line">kube-system     kube-flannel-ds-gthqp                          1/1       Running   24         11h</span><br><span class="line">kube-system     kube-flannel-ds-kdgw8                          1/1       Running   18         11h</span><br><span class="line">kube-system     kube-flannel-ds-pq79j                          1/1       Running   13         11h</span><br><span class="line">kube-system     kube-proxy-5qgfb                               1/1       Running   0          6d</span><br><span class="line">kube-system     kube-proxy-jp74t                               1/1       Running   0          6d</span><br><span class="line">kube-system     kube-proxy-wpn9k                               1/1       Running   6          6d</span><br><span class="line">kube-system     kube-scheduler-bd04.ty.lgy.360es.cn            1/1       Running   7          1d</span><br><span class="line">kube-system     kubernetes-dashboard-7d5dcdb6d9-gvrg9          1/1       Running   0          7s</span><br></pre></td></tr></table></figure></p>
-<p>k8s集群环境搭建完毕！</p>
-<p>k8s的环境搭建确实很麻烦，即使服务器有网络环境，也需要翻墙软件，才能自动docker下载。也有教程指导从国内阿里云等下载镜像，用docker tag重新打标签。后面再尝试吧。</p>
-<p>对于一个全新的技术框架，亲自动手搭建环境，跑demo是第一步，后面继续折腾吧。</p>
-
-          
-        
-      
-    </div>
-    
-    
-    
-
-    
-
-    
-
-    
-
-    <footer class="post-footer">
-      
-
-      
-
-      
-
-      
-      
-        <div class="post-eof"></div>
-      
-
-    </footer>
-  </div>
-  
-  
-  
-  </article>
-
-
-    
-      
-
-  
-
-  
-  
-  
-
-  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
-  
-  
-  
-  <div class="post-block">
     <link itemprop="mainEntityOfPage" href="http://yoursite.com/2018/05/17/Sleuth-Kafka-Zipkin-ElasticSearch链路追踪/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -1780,6 +1605,141 @@
 
 
     
+      
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2018/03/04/Play-Framework-Anorm返回class对象/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="Liao Rui">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.jpeg">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="TechLiving">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">
+                
+                <a class="post-title-link" href="/2018/03/04/Play-Framework-Anorm返回class对象/" itemprop="url">Play Framework Anorm返回class对象</a></h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2018-03-04T17:42:08+08:00">
+                2018-03-04
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+
+          
+            
+              <span class="post-comments-count">
+                <span class="post-meta-divider">|</span>
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-comment-o"></i>
+                </span>
+                <a href="/2018/03/04/Play-Framework-Anorm返回class对象/#comments" itemprop="discussionUrl">
+                  <span class="post-comments-count valine-comment-count" data-xid="/2018/03/04/Play-Framework-Anorm返回class对象/" itemprop="commentCount"></span>
+                </a>
+              </span>
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        
+          
+            <p>Scala是构建在JVM上的函数式编程语言，在大数据领域开始展现出独特的优势，Kafka，Spark，Flink组件等都是用Scala开发的。而在web开发领域，<a href="https://github.com/playframework/playframework" target="_blank" rel="noopener">Play Framework</a>是最优秀的Scala响应式编程web框架。</p>
+<p>Play Framework支持Slick和Anorm两种方式操作数据库。Slick支持Functional Relational Mapping (FRM)的访问方式，类似于Java平台的ORM。Anorm相对Slick更简单，直接用SQL语句交互，并提供了结果集的类型转换。</p>
+<p>Anorm如何将查询结果转换成Scala case class对象，<a href="https://www.playframework.com/documentation/2.6.x/ScalaAnorm#Generated-parsers" target="_blank" rel="noopener">官方文档</a>介绍的不是很详细，用了Macro.namedParser，宏定义导致语法错误没办法被IDE编译阶段发现，给开发调度带来不便。<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">val parser: RowParser[Info] = Macro.parser[Info](&quot;a_name&quot;, &quot;creation&quot;)</span><br><span class="line">/* Generated as:</span><br><span class="line">get[String](&quot;a_name&quot;) ~ get[Option[Int]](&quot;creation&quot;) map &#123;</span><br><span class="line">  case name ~ year =&gt; Info(name, year)</span><br><span class="line">&#125;</span><br><span class="line">*/</span><br></pre></td></tr></table></figure></p>
+<p>其实可以直接去掉Macro.parser，用以下语法：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">val parser: RowParser[Info] = get[String](&quot;a_name&quot;) ~ get[Option[Int]](&quot;creation&quot;) map &#123;</span><br><span class="line">  case name ~ year =&gt; Info(name, year)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>这样也方便在map里对name和year做数据转换，例如对year进行日期格式化或加减天数，而在上面的宏定义语法里是没办法支持的。</p>
+
+          
+        
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+
+      
+
+      
+
+      
+      
+        <div class="post-eof"></div>
+      
+
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+    
   </section>
 
   
@@ -1834,7 +1794,7 @@
               
                 <a href="/archives/">
               
-                  <span class="site-state-item-count">17</span>
+                  <span class="site-state-item-count">16</span>
                   <span class="site-state-item-name">日志</span>
                 </a>
               </div>
@@ -1847,7 +1807,7 @@
               
               <div class="site-state-item site-state-tags">
                 <a href="/tags/index.html">
-                  <span class="site-state-item-count">6</span>
+                  <span class="site-state-item-count">5</span>
                   <span class="site-state-item-name">标签</span>
                 </a>
               </div>
