@@ -252,6 +252,149 @@
   
   
   <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2018/10/18/KeepAlived-LVS访问Snowflake服务/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="Liao Rui">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.jpeg">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="TechLiving">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">
+                
+                <a class="post-title-link" href="/2018/10/18/KeepAlived-LVS访问Snowflake服务/" itemprop="url">KeepAlived+LVS访问Snowflake服务</a></h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2018-10-18T15:16:01+08:00">
+                2018-10-18
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+
+          
+            
+              <span class="post-comments-count">
+                <span class="post-meta-divider">|</span>
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-comment-o"></i>
+                </span>
+                <a href="/2018/10/18/KeepAlived-LVS访问Snowflake服务/#comments" itemprop="discussionUrl">
+                  <span class="post-comments-count valine-comment-count" data-xid="/2018/10/18/KeepAlived-LVS访问Snowflake服务/" itemprop="commentCount"></span>
+                </a>
+              </span>
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        
+          
+            <p>上一篇文章介绍了snowflake的算法原理和安装部署，利用zookeeper管理workId，实现分布式部署。</p>
+<p>每个snowflake节点向zookeeper注册自己的IP和端口，zookeeper实现上是一个注册中心。从客户端调用方的角度看，需要解决：1、如何选择一个可用的服务节点；2、节点挂掉后可以自动选择其它的节点。</p>
+<p>选择可用节点，有轮循、随机选择、加权轮循、LRU等算法。节点挂掉后自动选择其它节点，则要有服务失败检测机制，快速检测到失败，然后切换到其它节点。</p>
+<p>由于snowflake是基于thrift的RPC调用，在调用量很大时，客户端和服务节点最好维持一个TCP长连接。在<a href="https://liaorui.github.io/2018/01/22/Twitter-commons-thrift-pool源码分析/" target="_blank" rel="noopener">Twitter-commons-thrift-pool源码分析</a>文章里，介绍了twitter的commons thrift连接池，可以同时配置多个snowflake的服务地址列表，由连接池来管理TCP连接。当有服务节点挂掉或临时不可用时，连接池会自动监控到，并根据失败率的阈值设置，自动关闭失败的服务节点连接。当节点恢复时，再开启连接。<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">List&lt;InetSocketAddress&gt; addrs = Lists.newArrayList(new InetSocketAddress(&quot;192.168.10.83&quot;, 7609),</span><br><span class="line">            new InetSocketAddress(&quot;192.168.10.84&quot;, 7609));</span><br><span class="line">Snowflake.Iface client = ThriftFactory.create(Snowflake.Iface.class)</span><br><span class="line">        .withMaxConnectionsPerEndpoint(20)</span><br><span class="line">        .withSocketTimeout(Amount.of(30L, Time.SECONDS))</span><br><span class="line">        .useFramedTransport(true)</span><br><span class="line">        .build(ImmutableSet.copyOf(addrs))</span><br><span class="line">        .builder()</span><br><span class="line">        .withConnectTimeout(Amount.of(30L, Time.SECONDS))</span><br><span class="line">        .withRequestTimeout(Amount.of(30L, Time.SECONDS))</span><br><span class="line">        .withRetries(3)</span><br><span class="line">        .create();</span><br></pre></td></tr></table></figure></p>
+<p>也可以利用apache curator连接zookeeper，监听/snowflake-servers路径变化，如果有新增服务节点，则加入到缓存服务列表中来，如果有服务宕机或重新部署，则从缓存列表中移除。</p>
+<p>实际项目中测试，commons thrift pool会有1秒的失败窗口期，而curator自己监听zookeeper临时节点变化，也会有3秒的失败窗口期。</p>
+<p>而利用KeepAlived和LVS，可以较好的实现服务的高可用和对客户端的友好性。<br>假设有两台CentOS机器 192.168.10.83 和 192.168.10.84，上面分别部署了snowflake，VIP设置成 192.168.10.85。客户端直接连接192.168.10.85，如果某台机器出现问题，VIP自动飘移到另外一台机器。</p>
+<p>具体实施过程如下：<br>1、两台机器上分别安装ipvsadm和keepalived。<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">yum install keepalived -y</span><br><span class="line">yum install ipvsadm -y</span><br></pre></td></tr></table></figure></p>
+<p>2、配置keepalived。<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br></pre></td><td class="code"><pre><span class="line">! Configuration File for keepalived</span><br><span class="line">vrrp_instance VI_1 &#123;</span><br><span class="line">    state BACKUP            // 两台机器都设置成BACKUP</span><br><span class="line">    interface eth0</span><br><span class="line">    virtual_router_id 51</span><br><span class="line">    priority 100            // 另一台设置成90</span><br><span class="line">    advert_int 1</span><br><span class="line">    nopreempt               // 非抢占式</span><br><span class="line">    authentication &#123;</span><br><span class="line">        auth_type PASS</span><br><span class="line">        auth_pass 1111</span><br><span class="line">    &#125;</span><br><span class="line">    virtual_ipaddress &#123;</span><br><span class="line">        // 注意子网掩码和原来一样配置，保证VIP在同一个子网内</span><br><span class="line">        192.168.10.85/26 dev eth0 label eth0:0  </span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">virtual_server 192.168.10.85 7609 &#123;</span><br><span class="line">    delay_loop 3</span><br><span class="line">    lb_algo rr                            // 轮循算法</span><br><span class="line">    lb_kind DR                            // DR模式，效率比NAT模式高</span><br><span class="line">    persistence_timeout 5</span><br><span class="line">    protocol TCP</span><br><span class="line"></span><br><span class="line">    real_server 192.168.10.83 7609 &#123;</span><br><span class="line">        weight 1</span><br><span class="line">        TCP_CHECK &#123;</span><br><span class="line">            connect_timeout 3</span><br><span class="line">            nb_get_retry 3</span><br><span class="line">            delay_before_retry 3</span><br><span class="line">            connect_port 7609</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    real_server 192.168.10.84 7609 &#123;</span><br><span class="line">        weight 1</span><br><span class="line">        TCP_CHECK &#123;</span><br><span class="line">            connect_timeout 3</span><br><span class="line">            nb_get_retry 3</span><br><span class="line">            delay_before_retry 3</span><br><span class="line">            connect_port 7609</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>3、用ipvsadm查看ipvsadm状态<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">IP Virtual Server version 1.2.1 (size=4096)</span><br><span class="line">Prot LocalAddress:Port Scheduler Flags</span><br><span class="line">  -&gt; RemoteAddress:Port           Forward Weight ActiveConn InActConn</span><br><span class="line">TCP  192.168.10.85:http rr persistent 50</span><br><span class="line">  -&gt; 192.168.10.83:http            Route    1      0          0         </span><br><span class="line">  -&gt; 192.168.10.84:http            Route    1      0          0</span><br></pre></td></tr></table></figure></p>
+<p>当某节点的7609端口不通时，LVS会自动将查询请求转给另一个节点。当某一台机器出现故障时，keepalived会自动接管VIP。对客户端来说，始终连接的是192.168.10.85，不用关心后端服务的细节，后端服务也很方便水平扩展。</p>
+<p>以上总结了snowflake客户端的三种实践方式。第一种依赖twitter commons thrift pool，使用起来最简单。第三种依赖keepalived和LVS，可靠性较高。第二种方式需要自己编码实现服务节点的选择和故障转移，难度较大。</p>
+<p>后续计划：1、参考dubbo操作zookeeper的源码实现，看dubbo是如何选择可用服务节点的。2、LVS的DR和NAT模式的原理和对比。</p>
+
+          
+        
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+
+      
+
+      
+
+      
+      
+        <div class="post-eof"></div>
+      
+
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+    
+      
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
     <link itemprop="mainEntityOfPage" href="http://yoursite.com/2018/10/11/分布式ID生成服务-Snowflake/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -1675,146 +1818,6 @@
 
 
     
-      
-
-  
-
-  
-  
-  
-
-  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
-  
-  
-  
-  <div class="post-block">
-    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2018/03/14/飞机经纬度连线消除锯齿/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="name" content="Liao Rui">
-      <meta itemprop="description" content="">
-      <meta itemprop="image" content="/images/avatar.jpeg">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="TechLiving">
-    </span>
-
-    
-      <header class="post-header">
-
-        
-        
-          <h1 class="post-title" itemprop="name headline">
-                
-                <a class="post-title-link" href="/2018/03/14/飞机经纬度连线消除锯齿/" itemprop="url">飞机经纬度连线消除锯齿</a></h1>
-        
-
-        <div class="post-meta">
-          <span class="post-time">
-            
-              <span class="post-meta-item-icon">
-                <i class="fa fa-calendar-o"></i>
-              </span>
-              
-                <span class="post-meta-item-text">发表于</span>
-              
-              <time title="创建于" itemprop="dateCreated datePublished" datetime="2018-03-14T20:30:45+08:00">
-                2018-03-14
-              </time>
-            
-
-            
-
-            
-          </span>
-
-          
-
-          
-            
-              <span class="post-comments-count">
-                <span class="post-meta-divider">|</span>
-                <span class="post-meta-item-icon">
-                  <i class="fa fa-comment-o"></i>
-                </span>
-                <a href="/2018/03/14/飞机经纬度连线消除锯齿/#comments" itemprop="discussionUrl">
-                  <span class="post-comments-count valine-comment-count" data-xid="/2018/03/14/飞机经纬度连线消除锯齿/" itemprop="commentCount"></span>
-                </a>
-              </span>
-            
-          
-
-          
-          
-
-          
-
-          
-
-          
-
-        </div>
-      </header>
-    
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-      
-
-      
-        
-          
-            <p>在<a href="https://liaorui.github.io/2018/02/02/ADS-B%E7%AE%80%E4%BB%8B/" target="_blank" rel="noopener">ADS-B简介</a>这篇文章里，介绍了ADS-B的数据样式。利用ADS-B的数据，我们可以做出类似<a href="https://www.flightradar24.com" target="_blank" rel="noopener">Flightradar24</a>这样酷炫的飞机轨迹图，只要把一系统连续点的经、纬度在地图上连线即可。</p>
-<p>像Flightradar24这样的专业ADS-B数据商，都会有多种ADS-B数据源。拿到几个接收器或几个数据源的数据后，需要进行整合。如果仅仅按获取到的实时位置的创建时间来整合，则在地图上画出来的曲线会存在锯齿。原因是各个ADS-B接收器的规格、参数、网络的差异，对同一区域的同一架飞机的监控，各个设备获取到的经纬度数据也可能存在误差。</p>
-<p>这里利用Thaddeus Vincenty的地理空间经纬度算法，消除明显的棱角，得到比较顺滑的曲线。Java代码实现在这里：<a><a href="https://github.com/mgavaghan/geodesy" target="_blank" rel="noopener">https://github.com/mgavaghan/geodesy</a></a></p>
-<p>思路是，根据上一个位置的<b>经纬度、速度、航向、飞行时间</b>（上一个时间距离当前的时间的时长），推算出下一个飞行到达的位置（理论位置），并跟当前位置（从ADS-B数据源拿到的位置）进行比较。如果在一个合理的误差范围，则认为数据源提供的当前位置有效，否则认为数据源给的当前位置无效，会出现锯齿，应丢弃。</p>
-<p>关键代码为：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line">if (lastRB24Log != null) &#123;</span><br><span class="line">    int seconds = DateTimeUtil.getDateDiffSecond(planeLog.getCreateTime(), lastRB24Log.getCreateTime());</span><br><span class="line">    double flyLen = GpsGeometryCalculate.getMetricLenght(lastRB24Log.getSpeed(), seconds);</span><br><span class="line">    double[] calPoint = GpsGeometryCalculate.calEndPointGps(lastRB24Log.getLatitude(), lastRB24Log.getLongitude(), flyLen, lastRB24Log.getCourse());</span><br><span class="line">    double latDelta = Math.abs(calPoint[0] - planeLog.getLatitude());</span><br><span class="line">    double lonDelta = Math.abs(calPoint[1] - planeLog.getLongitude());</span><br><span class="line">    if (seconds &lt; 120 &amp;&amp; (latDelta &gt; 0.1 &amp;&amp; latDelta &lt; 1) || (lonDelta &gt; 0.1 &amp;&amp; lonDelta &lt; 1)) &#123;</span><br><span class="line">        // 2分钟内，纬度或经度跨度太大，不合理，需要丢弃</span><br><span class="line">        continue;</span><br><span class="line">    &#125; else &#123;</span><br><span class="line">        lastRB24Log = planeLog;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
-<p>其中getMetricLenght()和calEndPointGps()方法实现如下：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br></pre></td><td class="code"><pre><span class="line">// 速度转换常数 1kn(节） =1.852km/小时</span><br><span class="line">private static double KN_TO_KM = 1.852;</span><br><span class="line"></span><br><span class="line">public static double getMetricLenght(int kn, int runTime) &#123;</span><br><span class="line">    return kn * KN_TO_KM * runTime / 3600;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">public static double[] calEndPointGps(Double lastLat, Double lastLng, double flyingLenght, double azimuth) &#123;</span><br><span class="line">    GeodeticCalculator geoCalc = new GeodeticCalculator();</span><br><span class="line"></span><br><span class="line">    // select a reference elllipsoid</span><br><span class="line">    Ellipsoid reference = Ellipsoid.WGS84;</span><br><span class="line"></span><br><span class="line">    // set Lincoln Memorial coordinates</span><br><span class="line">    GlobalCoordinates lincolnMemorial;</span><br><span class="line">    lincolnMemorial = new GlobalCoordinates(lastLat, lastLng);</span><br><span class="line"></span><br><span class="line">    // set the direction and distance</span><br><span class="line">    double startBearing = azimuth;</span><br><span class="line">    double distance = flyingLenght * 1000;</span><br><span class="line"></span><br><span class="line">    // find the destination</span><br><span class="line">    double[] endBearing = new double[1];</span><br><span class="line">    GlobalCoordinates dest = geoCalc.calculateEndingGlobalCoordinates(reference, lincolnMemorial, startBearing,</span><br><span class="line">            distance, endBearing);</span><br><span class="line">    return new double[] &#123; dest.getLatitude(), dest.getLongitude() &#125;;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
-<p>上面的120秒，纬度或经度跨度大于0.1，是经验值，需要根据大量测试数据对比得到。</p>
-<p>如果飞机在空中转弯或画圈，飞行轨迹为弧线，如果ADS-B信号不好，拿到的位置点不连续，也会导致地图上画的线成了折线，不够圆滑。于是想到用<a href="http://www.cnblogs.com/hnfxs/p/3148483.html" target="_blank" rel="noopener">贝塞尔曲线</a>算法，来拟合曲线上的点，让画出来的曲线看起来更圆滑。<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line">double geolat1 = 36.5467;</span><br><span class="line">double geolon1 = 101.7883;</span><br><span class="line">    </span><br><span class="line">double geolat2 = 36.5044;</span><br><span class="line">double geolon2 = 101.8472;</span><br><span class="line"></span><br><span class="line">// 控制点</span><br><span class="line">double contrlat = 36.5250;</span><br><span class="line">double contrlon = 101.8175;</span><br><span class="line"></span><br><span class="line">// 贝塞尔曲线</span><br><span class="line">for (float t = 0.1f; t &lt; 1; t += 0.2) &#123;</span><br><span class="line">    double x = (1 - t) * (1 - t) * geolat1 + 2 * (1 - t) * t * contrlat + t * t * geolat2;</span><br><span class="line">    double y = (1 - t) * (1 - t) * geolon1 + 2 * (1 - t) * t * geolon2 + t * t * contrlon;</span><br><span class="line">    System.out.println(x + &quot;, &quot; + y);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
-<p>假定只拿到弧线上的两个点(36.5467,101.7883),(36.5044,101.8472)，选择一个控制点(36.5250,101.8175)，控制变量t从0到1的变换中，拟合出很多点，这些点组成的曲线看起来有很好的弧形。</p>
-<p>而实际上，控制点很难选择和确定，后续项目中再慢慢研究吧。</p>
-
-          
-        
-      
-    </div>
-    
-    
-    
-
-    
-
-    
-
-    
-
-    <footer class="post-footer">
-      
-
-      
-
-      
-
-      
-      
-        <div class="post-eof"></div>
-      
-
-    </footer>
-  </div>
-  
-  
-  
-  </article>
-
-
-    
   </section>
 
   
@@ -1869,7 +1872,7 @@
               
                 <a href="/archives/">
               
-                  <span class="site-state-item-count">18</span>
+                  <span class="site-state-item-count">19</span>
                   <span class="site-state-item-name">日志</span>
                 </a>
               </div>
@@ -1882,7 +1885,7 @@
               
               <div class="site-state-item site-state-tags">
                 <a href="/tags/index.html">
-                  <span class="site-state-item-count">5</span>
+                  <span class="site-state-item-count">6</span>
                   <span class="site-state-item-name">标签</span>
                 </a>
               </div>
