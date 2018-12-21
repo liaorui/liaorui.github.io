@@ -252,6 +252,161 @@
   
   
   <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2018/03/21/Spring Boot如何加载tomcat/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="Liao Rui">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.jpeg">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="TechLiving">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">
+                
+                <a class="post-title-link" href="/2018/03/21/Spring Boot如何加载tomcat/" itemprop="url">Spring Boot如何加载tomcat</a></h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2018-03-21T10:05:44+08:00">
+                2018-03-21
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+
+          
+            
+              <span class="post-comments-count">
+                <span class="post-meta-divider">|</span>
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-comment-o"></i>
+                </span>
+                <a href="/2018/03/21/Spring Boot如何加载tomcat/#comments" itemprop="discussionUrl">
+                  <span class="post-comments-count valine-comment-count" data-xid="/2018/03/21/Spring Boot如何加载tomcat/" itemprop="commentCount"></span>
+                </a>
+              </span>
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        
+          
+            <p>有同事说面试时被问到Spring Boot是如何加载tomcat的，我也是一脸懵逼。特意debug了一下，大致的加载过程如下图所示:</p>
+<p><img src="/2018/03/21/Spring Boot如何加载tomcat/spring boot load tomcat.png" alt=""></p>
+<p>Spring Boot web项目，只需要在pom.xml中引入：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">&lt;dependency&gt;</span><br><span class="line">    &lt;groupId&gt;org.springframework.boot&lt;/groupId&gt;</span><br><span class="line">    &lt;artifactId&gt;spring-boot-starter-web&lt;/artifactId&gt;</span><br><span class="line">    &lt;version&gt;2.0.1.RELEASE&lt;/version&gt;</span><br><span class="line">&lt;/dependency&gt;</span><br></pre></td></tr></table></figure></p>
+<p>在github上看spring-boot-starter-web的pom.xml定义，有如下依赖：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line">&lt;dependency&gt;</span><br><span class="line">	&lt;groupId&gt;org.springframework.boot&lt;/groupId&gt;</span><br><span class="line">	&lt;artifactId&gt;spring-boot-starter-tomcat&lt;/artifactId&gt;</span><br><span class="line">	&lt;version&gt;2.0.1.RELEASE&lt;/version&gt;</span><br><span class="line">&lt;/dependency&gt;</span><br><span class="line"></span><br><span class="line">......</span><br><span class="line"></span><br><span class="line">&lt;dependency&gt;</span><br><span class="line">	&lt;groupId&gt;org.springframework&lt;/groupId&gt;</span><br><span class="line">	&lt;artifactId&gt;spring-web&lt;/artifactId&gt;</span><br><span class="line">	&lt;version&gt;2.0.1.RELEASE&lt;/version&gt;</span><br><span class="line">&lt;/dependency&gt;</span><br><span class="line">&lt;dependency&gt;</span><br><span class="line">	&lt;groupId&gt;org.springframework&lt;/groupId&gt;</span><br><span class="line">	&lt;artifactId&gt;spring-webmvc&lt;/artifactId&gt;</span><br><span class="line">	&lt;version&gt;2.0.1.RELEASE&lt;/version&gt;</span><br><span class="line">&lt;/dependency&gt;</span><br></pre></td></tr></table></figure></p>
+<p>默认加载了tomcat作为web容器。</p>
+<p>我们的应用项目启动入口是：SpringApplication.run(Application.class, args)，其中Application.class是包含main()的主类。跟踪到run()方法里面：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">public ConfigurableApplicationContext run(String... args) &#123;</span><br><span class="line">		......</span><br><span class="line">		context = createApplicationContext(); //</span><br><span class="line">		......</span><br><span class="line">		refreshContext(context);</span><br><span class="line">		......</span><br><span class="line">	&#125;</span><br></pre></td></tr></table></figure></p>
+<p>这里并没有看到启动tomcat的相关代码。程序的层次结构有些深，大量运用了Java多态特性，基于接口编程，我们看到的都是对接口方法的调用，很难知道具体是哪一个子类实现。</p>
+<p>换个思路，从程序运行的log日志里找线索，运行程序，在控制台上找到如下日志：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">......</span><br><span class="line">2018-03-21 10:55:36.413  INFO 8424 --- [           main] ConfigServletWebServerApplicationContext : Refreshing org.springframework.boot.web.servlet.context.AnnotationConfigServletWebServerApplicationContext@77e9807f: startup date [Wed Mar 21 10:55:36 CST 2018]; root of context hierarchy</span><br><span class="line">2018-03-21 10:55:38.847  INFO 8424 --- [           main] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat initialized with port(s): 8080 (http)</span><br><span class="line"></span><br><span class="line">......</span><br></pre></td></tr></table></figure></p>
+<p>第一次出现tomcat信息的log是在TomcatWebServer类里的initialize()方法，于是逆向溯源，向上查找，找到了TomcatServletWebServerFactory.getTomcatWebServer(Tomcat tomcat)调用，又找到TomcatServletWebServerFactory.getWebServer(ServletContextInitializer… initializers)。</p>
+<p>继续向上查找，到了ServletWebServerApplicationContext.createWebServer()方法：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line">private void createWebServer() &#123;</span><br><span class="line">		WebServer webServer = this.webServer;</span><br><span class="line">		ServletContext servletContext = getServletContext();</span><br><span class="line">		if (webServer == null &amp;&amp; servletContext == null) &#123;</span><br><span class="line">			ServletWebServerFactory factory = getWebServerFactory(); // factory得到的具体实现是TomcatServletWebServerFactory</span><br><span class="line">			this.webServer = factory.getWebServer(getSelfInitializer());</span><br><span class="line">		&#125;</span><br><span class="line">		else if (servletContext != null) &#123;</span><br><span class="line">			try &#123;</span><br><span class="line">				getSelfInitializer().onStartup(servletContext);</span><br><span class="line">			&#125;</span><br><span class="line">			catch (ServletException ex) &#123;</span><br><span class="line">				throw new ApplicationContextException(&quot;Cannot initialize servlet context&quot;,</span><br><span class="line">						ex);</span><br><span class="line">			&#125;</span><br><span class="line">		&#125;</span><br><span class="line">		initPropertySources();</span><br><span class="line">	&#125;</span><br></pre></td></tr></table></figure></p>
+<p>进一步看getWebServerFactory()的实现：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line">protected ServletWebServerFactory getWebServerFactory() &#123;</span><br><span class="line">		// Use bean names so that we don&apos;t consider the hierarchy</span><br><span class="line">		String[] beanNames = getBeanFactory()</span><br><span class="line">				.getBeanNamesForType(ServletWebServerFactory.class);  // beanNames数组只有一个元素，且为tomcatServletWebServerFactory</span><br><span class="line">		if (beanNames.length == 0) &#123;</span><br><span class="line">			throw new ApplicationContextException(</span><br><span class="line">					&quot;Unable to start ServletWebServerApplicationContext due to missing &quot;</span><br><span class="line">							+ &quot;ServletWebServerFactory bean.&quot;);</span><br><span class="line">		&#125;</span><br><span class="line">		if (beanNames.length &gt; 1) &#123;</span><br><span class="line">			throw new ApplicationContextException(</span><br><span class="line">					&quot;Unable to start ServletWebServerApplicationContext due to multiple &quot;</span><br><span class="line">							+ &quot;ServletWebServerFactory beans : &quot;</span><br><span class="line">							+ StringUtils.arrayToCommaDelimitedString(beanNames));</span><br><span class="line">		&#125;</span><br><span class="line">		return getBeanFactory().getBean(beanNames[0], ServletWebServerFactory.class);</span><br><span class="line">	&#125;</span><br></pre></td></tr></table></figure></p>
+<p>getBeanFactory().getBeanNamesForType(ServletWebServerFactory.class)用来从classpath中查找具体哪个容器类（tomcat, jetty，netty或undertow），具体怎么实现的呢？</p>
+<p>Spring Boot启动类加上@SpringBootApplication或@EnableAutoConfiguration注解后，会导入一个AutoConfigurationImportSelector的类，而这个类会去读取spring-boot-autoconfigure包里spring.factories下key为EnableAutoConfiguration对应的全限定名的值，其中包含了ServletWebServerFactoryAutoConfiguration这个类。<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">@Configuration</span><br><span class="line">@AutoConfigureOrder(Ordered.HIGHEST_PRECEDENCE)</span><br><span class="line">@ConditionalOnClass(ServletRequest.class)</span><br><span class="line">@ConditionalOnWebApplication(type = Type.SERVLET)</span><br><span class="line">@EnableConfigurationProperties(ServerProperties.class)</span><br><span class="line">@Import(&#123; ServletWebServerFactoryAutoConfiguration.BeanPostProcessorsRegistrar.class,</span><br><span class="line">		ServletWebServerFactoryConfiguration.EmbeddedTomcat.class,</span><br><span class="line">		ServletWebServerFactoryConfiguration.EmbeddedJetty.class,</span><br><span class="line">		ServletWebServerFactoryConfiguration.EmbeddedUndertow.class &#125;)</span><br><span class="line">public class ServletWebServerFactoryAutoConfiguration &#123;</span><br><span class="line">	...</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>又通过@Import注解引用了ServletWebServerFactoryConfiguration类。<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br></pre></td><td class="code"><pre><span class="line">class ServletWebServerFactoryConfiguration &#123;</span><br><span class="line"></span><br><span class="line">	@Configuration</span><br><span class="line">	@ConditionalOnClass(&#123; Servlet.class, Tomcat.class, UpgradeProtocol.class &#125;)</span><br><span class="line">	@ConditionalOnMissingBean(value = ServletWebServerFactory.class, search = SearchStrategy.CURRENT)</span><br><span class="line">	public static class EmbeddedTomcat &#123;</span><br><span class="line">		@Bean</span><br><span class="line">		public TomcatServletWebServerFactory tomcatServletWebServerFactory() &#123;</span><br><span class="line">			return new TomcatServletWebServerFactory();</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	/**</span><br><span class="line">	 * Nested configuration if Jetty is being used.</span><br><span class="line">	 */</span><br><span class="line">	@Configuration</span><br><span class="line">	@ConditionalOnClass(&#123; Servlet.class, Server.class, Loader.class,</span><br><span class="line">			WebAppContext.class &#125;)</span><br><span class="line">	@ConditionalOnMissingBean(value = ServletWebServerFactory.class, search = SearchStrategy.CURRENT)</span><br><span class="line">	public static class EmbeddedJetty &#123;</span><br><span class="line">		@Bean</span><br><span class="line">		public JettyServletWebServerFactory JettyServletWebServerFactory() &#123;</span><br><span class="line">			return new JettyServletWebServerFactory();</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	/**</span><br><span class="line">	 * Nested configuration if Undertow is being used.</span><br><span class="line">	 */</span><br><span class="line">	@Configuration</span><br><span class="line">	@ConditionalOnClass(&#123; Servlet.class, Undertow.class, SslClientAuthMode.class &#125;)</span><br><span class="line">	@ConditionalOnMissingBean(value = ServletWebServerFactory.class, search = SearchStrategy.CURRENT)</span><br><span class="line">	public static class EmbeddedUndertow &#123;</span><br><span class="line">		@Bean</span><br><span class="line">		public UndertowServletWebServerFactory undertowServletWebServerFactory() &#123;</span><br><span class="line">			return new UndertowServletWebServerFactory();</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>通过@ConditionalOnClass和@ConditionalOnMissingBean注解，在classpath中寻找tomcat或jetty或undertow的jar包。</p>
+<p>spring-boot-starter-web默认加载了spring-boot-starter-tomcat，进而加载了tomcat-embed-core，所以这里得到了tomcatServletWebServerFactory，并通过getTomcatWebServer(Tomcat tomcat)实例化TomcatWebServer，最终TomcatWebServer调用initialize()方法完成tomcat.start()调用。</p>
+<p>读取spring.factories文件的实现是通过org.springframework.core.io.support.SpringFactoriesLoader实现。SpringFactoriesLoader的实现类似于SPI（Service Provider Interface，在java.util.ServiceLoader的文档里有比较详细的介绍。java SPI提供一种服务发现机制，为某个接口寻找服务实现的机制。SpringFactoriesLoader会加载classpath下所有JAR文件里面的META-INF/spring.factories文件。<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br></pre></td><td class="code"><pre><span class="line">AutoConfigurationImportSelector.java</span><br><span class="line"></span><br><span class="line">/**</span><br><span class="line">	 * Return the auto-configuration class names that should be considered. By default</span><br><span class="line">	 * this method will load candidates using &#123;@link SpringFactoriesLoader&#125; with</span><br><span class="line">	 * &#123;@link #getSpringFactoriesLoaderFactoryClass()&#125;.</span><br><span class="line">	 * @param metadata the source metadata</span><br><span class="line">	 * @param attributes the &#123;@link #getAttributes(AnnotationMetadata) annotation</span><br><span class="line">	 * attributes&#125;</span><br><span class="line">	 * @return a list of candidate configurations</span><br><span class="line">	 */</span><br><span class="line">	protected List&lt;String&gt; getCandidateConfigurations(AnnotationMetadata metadata,</span><br><span class="line">			AnnotationAttributes attributes) &#123;</span><br><span class="line">		List&lt;String&gt; configurations = SpringFactoriesLoader.loadFactoryNames(</span><br><span class="line">				getSpringFactoriesLoaderFactoryClass(), getBeanClassLoader());</span><br><span class="line">		Assert.notEmpty(configurations,</span><br><span class="line">				&quot;No auto configuration classes found in META-INF/spring.factories. If you &quot;</span><br><span class="line">						+ &quot;are using a custom packaging, make sure that file is correct.&quot;);</span><br><span class="line">		return configurations;</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">SpringFactoriesLoader.java</span><br><span class="line"></span><br><span class="line">/**</span><br><span class="line">	 * Load the fully qualified class names of factory implementations of the</span><br><span class="line">	 * given type from &#123;@value #FACTORIES_RESOURCE_LOCATION&#125;, using the given</span><br><span class="line">	 * class loader.</span><br><span class="line">	 * @param factoryClass the interface or abstract class representing the factory</span><br><span class="line">	 * @param classLoader the ClassLoader to use for loading resources; can be</span><br><span class="line">	 * &#123;@code null&#125; to use the default</span><br><span class="line">	 * @see #loadFactories</span><br><span class="line">	 * @throws IllegalArgumentException if an error occurs while loading factory names</span><br><span class="line">	 */</span><br><span class="line">	public static List&lt;String&gt; loadFactoryNames(Class&lt;?&gt; factoryClass, @Nullable ClassLoader classLoader) &#123;</span><br><span class="line">		String factoryClassName = factoryClass.getName();</span><br><span class="line">		return loadSpringFactories(classLoader).getOrDefault(factoryClassName, Collections.emptyList());</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	private static Map&lt;String, List&lt;String&gt;&gt; loadSpringFactories(@Nullable ClassLoader classLoader) &#123;</span><br><span class="line">		MultiValueMap&lt;String, String&gt; result = cache.get(classLoader);</span><br><span class="line">		if (result != null) &#123;</span><br><span class="line">			return result;</span><br><span class="line">		&#125;</span><br><span class="line"></span><br><span class="line">		try &#123;</span><br><span class="line">			Enumeration&lt;URL&gt; urls = (classLoader != null ?</span><br><span class="line">					classLoader.getResources(FACTORIES_RESOURCE_LOCATION) :</span><br><span class="line">					ClassLoader.getSystemResources(FACTORIES_RESOURCE_LOCATION));</span><br><span class="line">			result = new LinkedMultiValueMap&lt;&gt;();</span><br><span class="line">			while (urls.hasMoreElements()) &#123;</span><br><span class="line">				URL url = urls.nextElement();</span><br><span class="line">				UrlResource resource = new UrlResource(url);</span><br><span class="line">				Properties properties = PropertiesLoaderUtils.loadProperties(resource);</span><br><span class="line">				for (Map.Entry&lt;?, ?&gt; entry : properties.entrySet()) &#123;</span><br><span class="line">					List&lt;String&gt; factoryClassNames = Arrays.asList(</span><br><span class="line">							StringUtils.commaDelimitedListToStringArray((String) entry.getValue()));</span><br><span class="line">					result.addAll((String) entry.getKey(), factoryClassNames);</span><br><span class="line">				&#125;</span><br><span class="line">			&#125;</span><br><span class="line">			cache.put(classLoader, result);</span><br><span class="line">			return result;</span><br><span class="line">		&#125;</span><br><span class="line">		catch (IOException ex) &#123;</span><br><span class="line">			throw new IllegalArgumentException(&quot;Unable to load factories from location [&quot; +</span><br><span class="line">					FACTORIES_RESOURCE_LOCATION + &quot;]&quot;, ex);</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br></pre></td></tr></table></figure></p>
+<p>JettyServletWebServerFactory和UndertowServletWebServerFactory，也继承了AbstractServletWebServerFactory，为何它们没有被getBeanNamesForType(ServletWebServerFactory.class)获取到呢? 查看他们的源码，可以看到分别import了org.eclipse.jetty.*和io.undertow.*，但我们并没有在项目中引入jetty或undertow，所以JettyServletWebServerFactory和UndertowServletWebServerFactory是没办法通过getBeanFactory().getBean(name, ServletWebServerFactory.class)来实例化的。</p>
+<p><img src="/2018/03/21/Spring Boot如何加载tomcat/servletwebserverfactory.png" alt=""></p>
+<p>如果pom.xml中同时加了tomcat和jetty，beanNames会得到两个元素，元素个数超过1，也会报错：“Unable to start ServletWebServerApplicationContext due to multiple ServletWebServerFactory beans”。</p>
+<p>另外一个问题是，Spring Boot是怎么判断是否是一个web应用，并自动加载对应的web容器的？这是由SpringApplication的webEnvironment变量来标识的。</p>
+<p>当工程的pom.xml文件里引入了spring-boot-starter-web，SpringApplication.run()方法会调用new SpringApplication(sources).run(args)，然后在void initialize(Object[] sources)方法里对webEnvironment赋值。<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br></pre></td><td class="code"><pre><span class="line">this.webEnvironment = deduceWebEnvironment();</span><br><span class="line"></span><br><span class="line">...</span><br><span class="line">private boolean deduceWebEnvironment() &#123;</span><br><span class="line">	for (String className : WEB_ENVIRONMENT_CLASSES) &#123;</span><br><span class="line">		if (!ClassUtils.isPresent(className, null)) &#123;</span><br><span class="line">			return false;</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line">	return true;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">...</span><br><span class="line">private static final String[] WEB_ENVIRONMENT_CLASSES = &#123; &quot;javax.servlet.Servlet&quot;,</span><br><span class="line">&quot;org.springframework.web.context.ConfigurableWebApplicationContext&quot; &#125;;</span><br><span class="line"></span><br><span class="line">...</span><br><span class="line">private ConfigurableEnvironment getOrCreateEnvironment() &#123;</span><br><span class="line">		if (this.environment != null) &#123;</span><br><span class="line">			return this.environment;</span><br><span class="line">		&#125;</span><br><span class="line">		if (this.webEnvironment) &#123;</span><br><span class="line">			return new StandardServletEnvironment();</span><br><span class="line">		&#125;</span><br><span class="line">		return new StandardEnvironment();</span><br><span class="line">	&#125;</span><br></pre></td></tr></table></figure></p>
+<p>从以上代码里可以看到，通过反射技术判断Java环境变量里是否有Servlet和ConfigurableWebApplicationContext,如果都找到了，webEnvironment置为ture，并在后面创建StandardServletEnvironment的配置环境，最后启动web容器。</p>
+<p>注意以上是基于spring boot 2.0版本的分析，而1.5的版本，是用EmbeddedWebApplicationContext和TomcatEmbeddedServletContainerFactory来实现的。</p>
+<p>spring-boot-starter总共提供了51个常用的库加载，很方便的简化了第三方库的引用和配置，都值得我们应用和学习。</p>
+
+          
+        
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+
+      
+
+      
+
+      
+      
+        <div class="post-eof"></div>
+      
+
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+    
+      
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
     <link itemprop="mainEntityOfPage" href="http://yoursite.com/2018/03/14/飞机经纬度连线消除锯齿/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -1601,7 +1756,7 @@
               
                 <a href="/archives/">
               
-                  <span class="site-state-item-count">19</span>
+                  <span class="site-state-item-count">20</span>
                   <span class="site-state-item-name">日志</span>
                 </a>
               </div>

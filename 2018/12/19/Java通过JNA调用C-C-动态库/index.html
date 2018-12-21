@@ -68,7 +68,7 @@
 
 
 
-  <meta name="keywords" content="docker," />
+  <meta name="keywords" content="Hexo, NexT" />
 
 
 
@@ -79,18 +79,17 @@
 
 
 
-<meta name="description" content="最近需要将Python应用程序部署上线，而用户现场的服务器基于安全原因，是不能访问外网的。Python需要访问Postgresql、Hive和ElasticSearch，需要psycopg2-binary、pyhs2、elasticsearch等插件。在测试环境下，通过pip install就能解决，但纯内网环境下，pip失去了作用。 pyhs2还依赖于cyrus-sasl-devel，有网情况下">
-<meta name="keywords" content="docker">
+<meta name="description" content="以前Java调用C/C++库，需要通过JNI来实现。具体做法是先用Java声明一个native方法，然后用javah -jni生成C++的头文件。C++程序引用这个头文件，再实现具体的逻辑。通过JNA，不用再关注jni头文件，可以像Java普通方法一样调用C/C++函数。 下面通过一个例子来看JNA的实现过程。先写一段获取系统时间的C程序：123456789#include &amp;lt;time.h&amp;">
 <meta property="og:type" content="article">
-<meta property="og:title" content="Docker构建Python应用镜像">
-<meta property="og:url" content="http://yoursite.com/2018/03/29/Docker构建Python应用镜像/index.html">
+<meta property="og:title" content="Java通过JNA调用C&#x2F;C++动态库">
+<meta property="og:url" content="http://yoursite.com/2018/12/19/Java通过JNA调用C-C-动态库/index.html">
 <meta property="og:site_name" content="TechLiving">
-<meta property="og:description" content="最近需要将Python应用程序部署上线，而用户现场的服务器基于安全原因，是不能访问外网的。Python需要访问Postgresql、Hive和ElasticSearch，需要psycopg2-binary、pyhs2、elasticsearch等插件。在测试环境下，通过pip install就能解决，但纯内网环境下，pip失去了作用。 pyhs2还依赖于cyrus-sasl-devel，有网情况下">
+<meta property="og:description" content="以前Java调用C/C++库，需要通过JNI来实现。具体做法是先用Java声明一个native方法，然后用javah -jni生成C++的头文件。C++程序引用这个头文件，再实现具体的逻辑。通过JNA，不用再关注jni头文件，可以像Java普通方法一样调用C/C++函数。 下面通过一个例子来看JNA的实现过程。先写一段获取系统时间的C程序：123456789#include &amp;lt;time.h&amp;">
 <meta property="og:locale" content="zh-Hans">
-<meta property="og:updated_time" content="2018-06-29T13:43:06.888Z">
+<meta property="og:updated_time" content="2018-12-21T06:25:46.708Z">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:title" content="Docker构建Python应用镜像">
-<meta name="twitter:description" content="最近需要将Python应用程序部署上线，而用户现场的服务器基于安全原因，是不能访问外网的。Python需要访问Postgresql、Hive和ElasticSearch，需要psycopg2-binary、pyhs2、elasticsearch等插件。在测试环境下，通过pip install就能解决，但纯内网环境下，pip失去了作用。 pyhs2还依赖于cyrus-sasl-devel，有网情况下">
+<meta name="twitter:title" content="Java通过JNA调用C&#x2F;C++动态库">
+<meta name="twitter:description" content="以前Java调用C/C++库，需要通过JNI来实现。具体做法是先用Java声明一个native方法，然后用javah -jni生成C++的头文件。C++程序引用这个头文件，再实现具体的逻辑。通过JNA，不用再关注jni头文件，可以像Java普通方法一样调用C/C++函数。 下面通过一个例子来看JNA的实现过程。先写一段获取系统时间的C程序：123456789#include &amp;lt;time.h&amp;">
 
 
 
@@ -120,13 +119,13 @@
 
 
 
-  <link rel="canonical" href="http://yoursite.com/2018/03/29/Docker构建Python应用镜像/"/>
+  <link rel="canonical" href="http://yoursite.com/2018/12/19/Java通过JNA调用C-C-动态库/"/>
 
 
 
 
 
-  <title>Docker构建Python应用镜像 | TechLiving</title>
+  <title>Java通过JNA调用C/C++动态库 | TechLiving</title>
   
 
 
@@ -253,7 +252,7 @@
   
   
   <div class="post-block">
-    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2018/03/29/Docker构建Python应用镜像/">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2018/12/19/Java通过JNA调用C-C-动态库/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="name" content="Liao Rui">
@@ -270,7 +269,7 @@
 
         
         
-          <h1 class="post-title" itemprop="name headline">Docker构建Python应用镜像</h1>
+          <h1 class="post-title" itemprop="name headline">Java通过JNA调用C/C++动态库</h1>
         
 
         <div class="post-meta">
@@ -282,8 +281,8 @@
               
                 <span class="post-meta-item-text">发表于</span>
               
-              <time title="创建于" itemprop="dateCreated datePublished" datetime="2018-03-29T14:35:51+08:00">
-                2018-03-29
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2018-12-19T17:04:05+08:00">
+                2018-12-19
               </time>
             
 
@@ -301,8 +300,8 @@
                 <span class="post-meta-item-icon">
                   <i class="fa fa-comment-o"></i>
                 </span>
-                <a href="/2018/03/29/Docker构建Python应用镜像/#comments" itemprop="discussionUrl">
-                  <span class="post-comments-count valine-comment-count" data-xid="/2018/03/29/Docker构建Python应用镜像/" itemprop="commentCount"></span>
+                <a href="/2018/12/19/Java通过JNA调用C-C-动态库/#comments" itemprop="discussionUrl">
+                  <span class="post-comments-count valine-comment-count" data-xid="/2018/12/19/Java通过JNA调用C-C-动态库/" itemprop="commentCount"></span>
                 </a>
               </span>
             
@@ -330,26 +329,102 @@
       
 
       
-        <p>最近需要将Python应用程序部署上线，而用户现场的服务器基于安全原因，是不能访问外网的。Python需要访问Postgresql、Hive和ElasticSearch，需要psycopg2-binary、pyhs2、elasticsearch等插件。在测试环境下，通过pip install就能解决，但纯内网环境下，pip失去了作用。</p>
-<p>pyhs2还依赖于cyrus-sasl-devel，有网情况下是通过yum install安装并自动解决rpm包的依赖问题的。另外，nginx、openssl都需要在线内网环境下安装，并且客户机上没有gcc和gcc-c++。</p>
-<p>我们一开始是手工下载各类rpm包，然后rpm -ivh手工安装，很快就陷入了万恶的rpm无限依赖。等最后装上这些环境时，相关rpm依赖包达到了50个以上，非常痛苦。</p>
-<p>尝试用docker解决这些依赖包问题，期望将Python程序运行需要的rpm和pip插件全部打包成一个镜像，然后在客户机上，直接导入镜像，方便运行。网上关于docker的教程已经很好了，但还是再做一下记录，以备将来之需。</p>
-<p>先在测试环境搭一套docker，然后在公共仓库下载一个linux环境。可以根据用户现场的服务器版本，下载对应的linux镜像。我们将在这个镜像的基础上，加入各种依赖文件。这个测试环境，必须是有网的。Docker现在支持Linux, Mac OS, Windows，基于覆盖了常用的各种桌面PC。<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">docker pull centos:7.2.1511</span><br></pre></td></tr></table></figure></p>
-<p>下载完成后，通过 docker images 查看镜像已经在我们本地了。<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">REPOSITORY      TAG             IMAGE ID            CREATED             SIZE</span><br><span class="line">centos          7.2.1511        0a2bad7da9b5        4 months ago        195MB</span><br></pre></td></tr></table></figure></p>
-<p>启动CentOS，只需要进入bash环境即可：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">docker run -p 8001:8001 -ti &lt;IMAGE ID&gt; /bin/bash</span><br></pre></td></tr></table></figure></p>
-<p>IMAGE ID通过docker images查看，只需要输入前4位即可，docker会自动识别。比如上面的IMAGE ID是0a2b。<br>-p参数是将docker的8001端口映射到宿主机的8001端口上，这样就可以在本地机器上通过8001端口直接访问Python程序的接口服务。<br>更多参数通过 docker run –help 来查看。</p>
-<p>接下来，    就可以像在物理机一样操作：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">yum -y install gcc</span><br><span class="line">yum -y install gcc-c++</span><br><span class="line">yum -y install python-devel</span><br><span class="line">yum -y install cyrus-sasl-devel</span><br><span class="line"></span><br><span class="line">curl https://bootstrap.pypa.io/get-pip.py | python</span><br><span class="line">pip install flask</span><br><span class="line">pip install pyhs2</span><br><span class="line">pip install psycopg2-binary</span><br><span class="line">pip install elasticsearch</span><br><span class="line">pip install pyyaml</span><br><span class="line">pip install requests</span><br></pre></td></tr></table></figure></p>
-<p>装好Python环境后，需要将Python程序复制到镜像里面，新开一个终端，运行：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">docker cp python_app &lt;CONTAINER ID&gt;:/root</span><br></pre></td></tr></table></figure></p>
-<p>CONTAINER ID在 docker ps 中看。只需要输入前4位即可，docker会自动识别。</p>
-<p>最后，启动Python程序即可。</p>
-<p>如果上述步骤都成功了，就可以将当前正在运行的docker容器保存为镜像。<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">docker commit &lt;CONTAINER ID&gt; py_docker</span><br></pre></td></tr></table></figure></p>
-<p>再通过 docker images 查看是否存在py_docker。</p>
-<p>这个py_docker就是一个完整的Python运行环境，包含了所有的相关依赖。</p>
-<p>通过以下命令将镜像导出来：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">docker save py_docker &gt; py_docker</span><br></pre></td></tr></table></figure></p>
-<p>现在我们拿到这个镜像文件了，带到客户现场去，直接导入客户机上：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">docker load &lt; py_docker</span><br></pre></td></tr></table></figure></p>
-<p>用以下命令来启动：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">docker run -p 8001:8001 -ti py_docker</span><br></pre></td></tr></table></figure></p>
-<p>通过这些简单的步骤，就解决了在内网环境下，安装Python或其他应用环境所面临的复杂的依赖包。</p>
-<p>如果服务器上连docker也没有，就需要先安装docker。其实docker本身通过rpm安装，也是一堆的依赖。下一篇文章将介绍yum离线仓库的构建方法，将docker依赖的rpm全部离线下载，然后拷到客户机上，本地安装。当docker装上后，后面的各种开发环境和应用环境就好解决了，微服务和应用隔离，就可以快乐的实施了。</p>
+        <p>以前Java调用C/C++库，需要通过JNI来实现。具体做法是先用Java声明一个native方法，然后用javah -jni生成C++的头文件。C++程序引用这个头文件，再实现具体的逻辑。通过<a href="https://github.com/java-native-access/jna" target="_blank" rel="noopener">JNA</a>，不用再关注jni头文件，可以像Java普通方法一样调用C/C++函数。</p>
+<p>下面通过一个例子来看JNA的实现过程。先写一段获取系统时间的C程序：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">#include &lt;time.h&gt;</span><br><span class="line"></span><br><span class="line">char* get_time()&#123;</span><br><span class="line">  time_t now;</span><br><span class="line">  struct tm* ptm;</span><br><span class="line">  time(&amp;now);</span><br><span class="line">  ptm = localtime(&amp;now);</span><br><span class="line">  return asctime(ptm);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>然后用gcc编译成动态链接库。如果是linux系统，则用：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">gcc -fPIC -shared -o libctime.so ctime.c</span><br></pre></td></tr></table></figure></p>
+<p>mac系统，可以用：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">gcc -dynamiclib -o libctime.dylib ctime.c</span><br></pre></td></tr></table></figure></p>
+<p>Java调用这段C程序的代码为：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">public interface ITime extends Library &#123;</span><br><span class="line">    String get_time();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>只要继承于Library接口，JNA可以自动实例化。<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">ITime obj = Native.load(&quot;ctime&quot;, ITime.class);</span><br></pre></td></tr></table></figure></p>
+<p>JNA规定C/C++的数据类型和Java的数据类型的映射关系为： </p>
+<table>
+<thead>
+<tr>
+<th>Native Type</th>
+<th>Size</th>
+<th>Java Type</th>
+<th>Common Windows Types</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>char</td>
+<td>8-bit integer</td>
+<td>byte</td>
+<td>BYTE, TCHAR</td>
+</tr>
+<tr>
+<td>short</td>
+<td>16-bit integer</td>
+<td>short</td>
+<td>WORD</td>
+</tr>
+<tr>
+<td>wchar_t</td>
+<td>16/32-bit character</td>
+<td>char</td>
+<td>TCHAR</td>
+</tr>
+<tr>
+<td>int</td>
+<td>32-bit integer</td>
+<td>int</td>
+<td>DWORD</td>
+</tr>
+<tr>
+<td>int</td>
+<td>boolean value</td>
+<td>boolean</td>
+<td>BOOL</td>
+</tr>
+<tr>
+<td>long</td>
+<td>32/64-bit integer</td>
+<td>NativeLong</td>
+<td>LONG</td>
+</tr>
+<tr>
+<td>long long</td>
+<td>64-bit integer</td>
+<td>long</td>
+<td>__int64</td>
+</tr>
+<tr>
+<td>float</td>
+<td>32-bit FP</td>
+<td>float</td>
+<td></td>
+</tr>
+<tr>
+<td>double</td>
+<td>64-bit FP</td>
+<td>double</td>
+<td></td>
+</tr>
+<tr>
+<td>char*</td>
+<td>C string</td>
+<td>String</td>
+<td>LPTCSTR</td>
+</tr>
+<tr>
+<td>void*</td>
+<td>pointer</td>
+<td>Pointer</td>
+<td>LPVOID, HANDLE, LP<i>XXX</i></td>
+</tr>
+</tbody>
+</table>
+<p>JNA查找native库路径的规则为下面的任意一种：</p>
+<ul>
+<li>设置jna.library.path系统环境变更，这个变量只会被JNA读取。</li>
+<li>设置操作系统的库函数环境变量，Windows下需要设置PATH，Linux下设置LD_LIBRARY_PATH，Mac下设置DYLD_LIBRARY_PATH。</li>
+<li>将native库放在Java的classpath环境下，路径为{OS}-{ARCH}/{LIBRARY}。根据操作系统，windows在win32-x86目录，linux在linux-x86-64目录，mac在darwin目录。native库如果打包在jar里面，可以被JNA自动加载。</li>
+</ul>
+<p>注意官方文档上写的是，linux系统下放在linux-amd64目录下，其实是有问题的，JNA 5.1.0版本会报错，加载不到native库。</p>
+<p>分析JNA的jar包结构，可以看到并没有linux-amd64目录。<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br></pre></td><td class="code"><pre><span class="line">com/sun/jna/win32-x86/</span><br><span class="line">com/sun/jna/win32-x86/jnidispatch.dll</span><br><span class="line">com/sun/jna/aix-ppc/</span><br><span class="line">com/sun/jna/aix-ppc/libjnidispatch.a</span><br><span class="line">com/sun/jna/aix-ppc64/</span><br><span class="line">com/sun/jna/aix-ppc64/libjnidispatch.a</span><br><span class="line">com/sun/jna/darwin/</span><br><span class="line">com/sun/jna/darwin/libjnidispatch.jnilib</span><br><span class="line">com/sun/jna/linux-x86/</span><br><span class="line">com/sun/jna/linux-x86/libjnidispatch.so</span><br><span class="line">com/sun/jna/linux-x86-64/</span><br><span class="line">com/sun/jna/linux-x86-64/libjnidispatch.so</span><br><span class="line">com/sun/jna/linux-arm/</span><br><span class="line">com/sun/jna/linux-arm/libjnidispatch.so</span><br><span class="line">com/sun/jna/linux-armel/</span><br><span class="line">com/sun/jna/linux-armel/libjnidispatch.so</span><br><span class="line">com/sun/jna/linux-aarch64/</span><br><span class="line">com/sun/jna/linux-aarch64/libjnidispatch.so</span><br><span class="line">com/sun/jna/linux-ppc/</span><br><span class="line">com/sun/jna/linux-ppc/libjnidispatch.so</span><br><span class="line">com/sun/jna/linux-ppc64le/</span><br><span class="line">com/sun/jna/linux-ppc64le/libjnidispatch.so</span><br><span class="line">com/sun/jna/linux-mips64el/</span><br><span class="line">com/sun/jna/linux-mips64el/libjnidispatch.so</span><br></pre></td></tr></table></figure></p>
+<p>JNA相比JNI，使用起来更简单，但性能上也有些损耗。从上面的libjnidispatch.so来看，JNA相当于在Java和JNI之间做了一层桥接或代理。JNA在native库的路径查找上更灵活，也去掉了native关键字，将native方法当成普通Java方法一样调用。</p>
+<p>建议将Java代码和JNA的jar包用maven-shade-plugin插件打成一个jar包，方便集成调用。</p>
+<p>demo的代码在<a href="https://github.com/liaorui/jna-demo" target="_blank" rel="noopener"><b>这里</b></a>。</p>
 
       
     </div>
@@ -373,12 +448,6 @@
 
     <footer class="post-footer">
       
-        <div class="post-tags">
-          
-            <a href="/tags/docker/" rel="tag"># docker</a>
-          
-        </div>
-      
 
       
       
@@ -388,8 +457,8 @@
         <div class="post-nav">
           <div class="post-nav-next post-nav-item">
             
-              <a href="/2018/03/23/EnableEurekaServer注解如何启动Eureka-Server/" rel="next" title="EnableEurekaServer注解如何启动Eureka Server">
-                <i class="fa fa-chevron-left"></i> EnableEurekaServer注解如何启动Eureka Server
+              <a href="/2018/10/18/KeepAlived-LVS访问Snowflake服务/" rel="next" title="KeepAlived+LVS访问Snowflake服务">
+                <i class="fa fa-chevron-left"></i> KeepAlived+LVS访问Snowflake服务
               </a>
             
           </div>
@@ -397,10 +466,6 @@
           <span class="post-nav-divider"></span>
 
           <div class="post-nav-prev post-nav-item">
-            
-              <a href="/2018/04/13/Mac上搭建Hadoop-Hive-Spark开发环境/" rel="prev" title="Mac上搭建Hadoop+Hive+Spark开发环境">
-                Mac上搭建Hadoop+Hive+Spark开发环境 <i class="fa fa-chevron-right"></i>
-              </a>
             
           </div>
         </div>
