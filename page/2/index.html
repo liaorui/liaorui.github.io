@@ -252,6 +252,150 @@
   
   
   <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2018/03/23/EnableEurekaServer注解如何启动Eureka-Server/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="Liao Rui">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.jpeg">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="TechLiving">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">
+                
+                <a class="post-title-link" href="/2018/03/23/EnableEurekaServer注解如何启动Eureka-Server/" itemprop="url">EnableEurekaServer注解如何启动Eureka Server</a></h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2018-03-23T17:47:26+08:00">
+                2018-03-23
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+
+          
+            
+              <span class="post-comments-count">
+                <span class="post-meta-divider">|</span>
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-comment-o"></i>
+                </span>
+                <a href="/2018/03/23/EnableEurekaServer注解如何启动Eureka-Server/#comments" itemprop="discussionUrl">
+                  <span class="post-comments-count valine-comment-count" data-xid="/2018/03/23/EnableEurekaServer注解如何启动Eureka-Server/" itemprop="commentCount"></span>
+                </a>
+              </span>
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        
+          
+            <p>Spring Cloud目前是Java世界里微服务的标准解决方案，它基于Spring Boot，用注解的方式很优雅地将Spring Boot项目加上各种微服务功能，如服务发现，负载均衡，服务熔断等。Spring Cloud包括了Eureka, hystrix, zuul, feign, sleuth, ribbon, turbine等组件。</p>
+<p>@EnableEurekaServer魔法一样的将一个普通的Spring Boot应用变成了Eureka的注册中心，如此简单快捷，它是怎么做到的呢？</p>
+<p>先看Spring Boot的入口程序：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">@EnableEurekaServer</span><br><span class="line">@SpringBootApplication</span><br><span class="line">public class Application &#123;</span><br><span class="line"></span><br><span class="line">	public static void main(String[] args) &#123;</span><br><span class="line">		new SpringApplicationBuilder(Application.class).web(true).run(args);</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>pom.xml引用：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">&lt;dependency&gt;</span><br><span class="line">	&lt;groupId&gt;org.springframework.cloud&lt;/groupId&gt;</span><br><span class="line">	&lt;artifactId&gt;spring-cloud-starter-eureka-server&lt;/artifactId&gt;</span><br><span class="line">&lt;/dependency&gt;</span><br></pre></td></tr></table></figure></p>
+<p>spring-cloud-starter-eureka-server依赖于spring-cloud-netflix-eureka-server，而spring-cloud-netflix-eureka-server又依赖于spring-boot-starter-web。spring-boot-starter-web又会引入tomcat embedded。</p>
+<p>web(true)方法会将SpringApplication的webEnvironment置为true，上一篇文章<a href="/2018/03/21/Spring%20Boot如何加载tomcat/">《Spring Boot如何加载tomcat》</a>分析了SpringApplication在检测到web环境后，会自动启动tomcat。</p>
+<p>@EnableEurekaServer的实现如下：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">@Target(ElementType.TYPE)</span><br><span class="line">@Retention(RetentionPolicy.RUNTIME)</span><br><span class="line">@Documented</span><br><span class="line">@Import(EurekaServerConfiguration.class)</span><br><span class="line">public @interface EnableEurekaServer &#123;</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>用Import注解导入了EurekaServerConfiguration，继续跟踪下去：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">@Configuration</span><br><span class="line">@Import(EurekaServerInitializerConfiguration.class)</span><br><span class="line">@EnableDiscoveryClient</span><br><span class="line">@EnableConfigurationProperties(EurekaDashboardProperties.class)</span><br><span class="line">@PropertySource(&quot;classpath:/eureka/server.properties&quot;)</span><br><span class="line">public class EurekaServerConfiguration extends WebMvcConfigurerAdapter &#123;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>EurekaServerInitializerConfiguration的实现为：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br></pre></td><td class="code"><pre><span class="line">public class EurekaServerInitializerConfiguration</span><br><span class="line">		implements ServletContextAware, SmartLifecycle, Ordered &#123;</span><br><span class="line"></span><br><span class="line">	......</span><br><span class="line"></span><br><span class="line">	@Autowired</span><br><span class="line">	private EurekaServerBootstrap eurekaServerBootstrap;</span><br><span class="line"></span><br><span class="line">	......</span><br><span class="line"></span><br><span class="line">	@Override</span><br><span class="line">	public void start() &#123;</span><br><span class="line">		new Thread(new Runnable() &#123;</span><br><span class="line">			@Override</span><br><span class="line">			public void run() &#123;</span><br><span class="line">				try &#123;</span><br><span class="line">					//TODO: is this class even needed now?</span><br><span class="line">					eurekaServerBootstrap.contextInitialized(EurekaServerInitializerConfiguration.this.servletContext);</span><br><span class="line">					log.info(&quot;Started Eureka Server&quot;);</span><br><span class="line"></span><br><span class="line">					publish(new EurekaRegistryAvailableEvent(getEurekaServerConfig()));</span><br><span class="line">					EurekaServerInitializerConfiguration.this.running = true;</span><br><span class="line">					publish(new EurekaServerStartedEvent(getEurekaServerConfig()));</span><br><span class="line">				&#125;</span><br><span class="line">				catch (Exception ex) &#123;</span><br><span class="line">					// Help!</span><br><span class="line">					log.error(&quot;Could not initialize Eureka servlet context&quot;, ex);</span><br><span class="line">				&#125;</span><br><span class="line">			&#125;</span><br><span class="line">		&#125;).start();</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	......</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>EurekaServerInitializerConfiguration实现了SmartLifecycle接口，start()方法会自动被Spring框架调用。eurekaServerBootstrap是通过@Autowired自动导入的，因为EurekaServerConfiguration类里有如下@Bean注解：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">@Bean</span><br><span class="line">public EurekaServerBootstrap eurekaServerBootstrap(PeerAwareInstanceRegistry registry,</span><br><span class="line">		EurekaServerContext serverContext) &#123;</span><br><span class="line">	return new EurekaServerBootstrap(this.applicationInfoManager,</span><br><span class="line">			this.eurekaClientConfig, this.eurekaServerConfig, registry,</span><br><span class="line">			serverContext);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>得到EurekaServerBootstrap的实例后，就依照EurekaBootstrap的实现，将eureka启动起来。</p>
+<p>我们看netflix的eureka的<a href="https://github.com/Netflix/eureka/blob/master/eureka-core/src/main/java/com/netflix/eureka/EurekaBootStrap.java" target="_blank" rel="noopener">EurekaBootstrap</a>代码，它实现了ServletContextListener接口，并且在<a href="https://github.com/Netflix/eureka/blob/master/eureka-server/src/main/webapp/WEB-INF/web.xml" target="_blank" rel="noopener">web.xml</a>中声明了<listener></listener>。因此eureka是作为一个标准的web应用，打包成war包放在tomcat容器里运行的。</p>
+<p>而spring-cloud-starter-eureka-server巧妙地将标准的web应用结构转换成Spring Boot项目，并用EurekaServerBootstrap模拟了EurekaBootStrap的行为，二者的代码实现基本是一致的，都对eureka服务进行了配置。但EurekaServerBootstrap并没有实现ServletContextListener接口，更没有在web.xml中声明listener。Spring Boot项目压根就没有web.xml。</p>
+<p>以上简要地分析了一个@EnableEurekaServer注解是如何实现eureka服务注册中心的，我们还可以深入学习EurekaServerBootstrap和EurekaBootStrap代码，看看eureka是怎么配置的。官方文档上说eureka的server和client的通讯协议是JSON格式的，通过Jersy和XStream传递，后面继续研究具体的通讯过程。</p>
+
+          
+        
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+
+      
+
+      
+
+      
+      
+        <div class="post-eof"></div>
+      
+
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+    
+      
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
     <link itemprop="mainEntityOfPage" href="http://yoursite.com/2018/03/21/Spring Boot如何加载tomcat/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -1555,158 +1699,11 @@
 
 
     
-      
-
-  
-
-  
-  
-  
-
-  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
-  
-  
-  
-  <div class="post-block">
-    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2018/01/22/Twitter-commons-thrift-pool源码分析/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="name" content="Liao Rui">
-      <meta itemprop="description" content="">
-      <meta itemprop="image" content="/images/avatar.jpeg">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="TechLiving">
-    </span>
-
-    
-      <header class="post-header">
-
-        
-        
-          <h1 class="post-title" itemprop="name headline">
-                
-                <a class="post-title-link" href="/2018/01/22/Twitter-commons-thrift-pool源码分析/" itemprop="url">Twitter commons thrift pool源码分析</a></h1>
-        
-
-        <div class="post-meta">
-          <span class="post-time">
-            
-              <span class="post-meta-item-icon">
-                <i class="fa fa-calendar-o"></i>
-              </span>
-              
-                <span class="post-meta-item-text">发表于</span>
-              
-              <time title="创建于" itemprop="dateCreated datePublished" datetime="2018-01-22T08:33:52+08:00">
-                2018-01-22
-              </time>
-            
-
-            
-
-            
-          </span>
-
-          
-
-          
-            
-              <span class="post-comments-count">
-                <span class="post-meta-divider">|</span>
-                <span class="post-meta-item-icon">
-                  <i class="fa fa-comment-o"></i>
-                </span>
-                <a href="/2018/01/22/Twitter-commons-thrift-pool源码分析/#comments" itemprop="discussionUrl">
-                  <span class="post-comments-count valine-comment-count" data-xid="/2018/01/22/Twitter-commons-thrift-pool源码分析/" itemprop="commentCount"></span>
-                </a>
-              </span>
-            
-          
-
-          
-          
-
-          
-
-          
-
-          
-
-        </div>
-      </header>
-    
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-      
-
-      
-        
-          
-            <p>Thrift是一套高性能、跨语言平台的RPC框架。Thrift可以使用TCP短连接和长连接。在调用量很大时，长连接可以有效避免频繁的TCP创建和连接，相对短连接可以提升性能。如果客户端需要高并发访问服务，单个TCP长连接只能顺序流转数据请求和接收，会严重影响并发性能，所以需要引入连接池。就像数据库连接池一样，一个client和server同时建立多个长连接，同时通讯调用，提升并发性能。  </p>
-<p>Thrift本身并没有提供长连接的连接池，常见的做法是用<a href="https://commons.apache.org/proper/commons-pool/" target="_blank" rel="noopener">apache commons-pool</a>实现自己的Object连接池。本文将介绍<a href="https://github.com/twitter/commons" target="_blank" rel="noopener">twitter commons</a>包里提供的thrift连接池，并简要分析一下其源码实现方式。  </p>
-<p>Twitter commons thrift主要提供了ThriftFactory<t>和Thrift<t>两个类。ThriftFactory<t>用工厂模式创建Thrift<t>，然后再通过Thrift<t>内部类ClientBuilder生成具体的thrift业务接口桩。类的关系图大致如下：</t></t></t></t></t></p>
-<p><img src="/2018/01/22/Twitter-commons-thrift-pool源码分析/thrift-pool.png" alt=""></p>
-<p>先看看ThriftFactory创建Thrift的代码：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">Thrift&lt;T&gt; thrift = ThriftFactory.create(T.class)</span><br><span class="line">    .withClientFactory(clientFactory)</span><br><span class="line">    .withServiceName(T.getName())</span><br><span class="line">    .withMaxConnectionsPerEndpoint(20)</span><br><span class="line">    .withSocketTimeout(Amount.of(30L, Time.SECONDS))</span><br><span class="line">    .useFramedTransport(true)</span><br><span class="line">    .build(ImmutableSet.copyOf(addrs))</span><br></pre></td></tr></table></figure></p>
-<p>ThriftFactory的构造方法是private的，create()方法用的是单例模式。<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">private ThriftFactory(Class&lt;T&gt; serviceInterface) &#123;</span><br><span class="line">    ...</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">public static &lt;T&gt; ThriftFactory&lt;T&gt; create(Class&lt;T&gt; serviceInterface) &#123;</span><br><span class="line">    return new ThriftFactory&lt;T&gt;(serviceInterface);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<p>几个with方法，都是设置属性，重点看一下build()方法，它创建了Thrift<t>对象。<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line">public Thrift&lt;T&gt; build(Set&lt;InetSocketAddress&gt; backends) &#123;</span><br><span class="line">    checkBaseState();</span><br><span class="line">    MorePreconditions.checkNotBlank(backends);</span><br><span class="line"></span><br><span class="line">    ManagedThreadPool managedThreadPool = createManagedThreadpool(backends.size());</span><br><span class="line">    LoadBalancer&lt;InetSocketAddress&gt; loadBalancer = createLoadBalancer();</span><br><span class="line">    Function&lt;TTransport, T&gt; clientFactory = getClientFactory();</span><br><span class="line"></span><br><span class="line">    ObjectPool&lt;Connection&lt;TTransport, InetSocketAddress&gt;&gt; connectionPool =</span><br><span class="line">        createConnectionPool(backends, loadBalancer, managedThreadPool, false);</span><br><span class="line"></span><br><span class="line">    return new Thrift&lt;T&gt;(managedThreadPool, connectionPool, loadBalancer, serviceName,</span><br><span class="line">        serviceInterface, clientFactory, false, sslTransport);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></t></p>
-<p>getClientFactory()方法默认创建的是TBinaryProtocol协议，如果我们需要用TMultiplexedProtocol协议，需要自己实现一个ClientFactory。其实很简单，仿照createClientFactory()方法即可。<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">private static &lt;T&gt; Function&lt;TTransport, T&gt; createClientFactory(Class&lt;T&gt; serviceInterface) &#123;</span><br><span class="line">    ...</span><br><span class="line">    return implementationConstructor.newInstance(new TBinaryProtocol(transport));</span><br><span class="line">    ...</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">改成：</span><br><span class="line">private static &lt;T&gt; Function&lt;TTransport, T&gt; createClientFactory(Class&lt;T&gt; serviceInterface, final String serviceName) &#123;</span><br><span class="line">    ...</span><br><span class="line">    return implementationConstructor.newInstance(new TMultiplexedProtocol(new TBinaryProtocol(transport), serviceName));</span><br><span class="line">    ...            </span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
-<p>当拿到Thrift<t>对象后，就可以创建thrift业务接口的具体实例了。<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">thrift.builder()</span><br><span class="line">    .withConnectTimeout(Amount.of(30L, Time.SECONDS))</span><br><span class="line">    .withRequestTimeout(Amount.of(30L, Time.SECONDS))</span><br><span class="line">    .disableStats()</span><br><span class="line">    .create()</span><br></pre></td></tr></table></figure></t></p>
-<p>builder()方法直接创建了一个ClientBuilder对象。可以对ClientBuilder设置超时、统计等属性。最后的create()方法实现是关键:<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br></pre></td><td class="code"><pre><span class="line">public T create() &#123;</span><br><span class="line">    return createClient(defaultConfig);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">private T createClient(Config config) &#123;</span><br><span class="line">    ...</span><br><span class="line">    Caller decorated = new ThriftCaller&lt;T&gt;(connectionPool, requestTracker, clientFactory,</span><br><span class="line">        config.getConnectTimeout(), debug);</span><br><span class="line"></span><br><span class="line">    ...</span><br><span class="line">    final Caller caller = decorated;</span><br><span class="line">    final InvocationHandler invocationHandler = new InvocationHandler() &#123;</span><br><span class="line">      @Override</span><br><span class="line">      public Object invoke(Object o, Method method, Object[] args) throws Throwable &#123;</span><br><span class="line">        ...</span><br><span class="line">        return caller.call(method, args, callback, null);</span><br><span class="line">      &#125;</span><br><span class="line">    &#125;;</span><br><span class="line"></span><br><span class="line">    @SuppressWarnings(&quot;unchecked&quot;)</span><br><span class="line">    T instance = (T) Proxy.newProxyInstance(serviceInterface.getClassLoader(),</span><br><span class="line">        new Class&lt;?&gt;[] &#123;serviceInterface&#125;, invocationHandler);</span><br><span class="line">    return instance;</span><br><span class="line">  &#125;</span><br></pre></td></tr></table></figure></p>
-<p>这里用到了动态代理模式，会在invocationHandler里自动调用caller.call()方法。而call()方法的具体实现是ThriftCaller的call()方法：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">public Object call(Method method, Object[] args, @Nullable AsyncMethodCallback&lt;?&gt; callback,</span><br><span class="line">      @Nullable Amount&lt;Long, Time&gt; connectTimeoutOverride) throws Throwable &#123;</span><br><span class="line">    ...</span><br><span class="line">    return invokeMethod(clientFactory.apply(connection.get()), method, args, callback, capture);</span><br><span class="line">  &#125;</span><br></pre></td></tr></table></figure></p>
-<p>最终调用了clientFactory.apply()方法。而clientFactory就是前面的：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">private static &lt;T&gt; Function&lt;TTransport, T&gt; createClientFactory(Class&lt;T&gt; serviceInterface, final String serviceName) &#123;</span><br><span class="line">    ...</span><br><span class="line">    return implementationConstructor.newInstance(new TMultiplexedProtocol(new TBinaryProtocol(transport), serviceName));</span><br><span class="line">    ...            </span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
-<p>用Java反射技术调用了业务实现类的构造方法，创建一个业务实现类对象。</p>
-<p>至此，拿到业务实现类对象后，就可以进行后续的RPC调用了。</p>
-<p>总得来说，twitter commons的thrift连接池采用的是Java动态代理和反射技术，动态生成业务实现类。</p>
-<p>作为一个连接池，是如何缓存对象，如何管理连接数的，后续文章再作分析。</p>
-
-          
-        
-      
-    </div>
-    
-    
-    
-
-    
-
-    
-
-    
-
-    <footer class="post-footer">
-      
-
-      
-
-      
-
-      
-      
-        <div class="post-eof"></div>
-      
-
-    </footer>
-  </div>
-  
-  
-  
-  </article>
-
-
-    
   </section>
 
   
   <nav class="pagination">
-    <a class="extend prev" rel="prev" href="/"><i class="fa fa-angle-left"></i></a><a class="page-number" href="/">1</a><span class="page-number current">2</span>
+    <a class="extend prev" rel="prev" href="/"><i class="fa fa-angle-left"></i></a><a class="page-number" href="/">1</a><span class="page-number current">2</span><a class="page-number" href="/page/3/">3</a><a class="extend next" rel="next" href="/page/3/"><i class="fa fa-angle-right"></i></a>
   </nav>
 
 
@@ -1756,7 +1753,7 @@
               
                 <a href="/archives/">
               
-                  <span class="site-state-item-count">20</span>
+                  <span class="site-state-item-count">21</span>
                   <span class="site-state-item-name">日志</span>
                 </a>
               </div>

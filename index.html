@@ -252,6 +252,153 @@
   
   
   <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2018/12/25/用grpc-gateway实现http和gRPC的服务转发/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="Liao Rui">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.jpeg">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="TechLiving">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">
+                
+                <a class="post-title-link" href="/2018/12/25/用grpc-gateway实现http和gRPC的服务转发/" itemprop="url">用grpc-gateway实现http和gRPC的服务转发</a></h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2018-12-25T14:44:18+08:00">
+                2018-12-25
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+
+          
+            
+              <span class="post-comments-count">
+                <span class="post-meta-divider">|</span>
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-comment-o"></i>
+                </span>
+                <a href="/2018/12/25/用grpc-gateway实现http和gRPC的服务转发/#comments" itemprop="discussionUrl">
+                  <span class="post-comments-count valine-comment-count" data-xid="/2018/12/25/用grpc-gateway实现http和gRPC的服务转发/" itemprop="commentCount"></span>
+                </a>
+              </span>
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        
+          
+            <p>在Spring Cloud体系里，负责RPC服务的是Feign组件，它是基于http的服务调用。在吞吐量很高，性能要求很高的场景下，需要用gRPC或thrift。因为它们是基于二进制的TCP协议，数据压缩更紧凑。</p>
+<p>gRPC通常用于后台服务之间的模块调用，但对外发布服务，没有Restful API方便。<a href="https://github.com/grpc-ecosystem/grpc-gateway" target="_blank" rel="noopener">grpc-gateway</a>可以实现restful到gRPC的协议转换。前端用restful接口调用，经过grpc-gateway转换成gRPC协议，交给后台gRPC server服务。</p>
+<p>gRPC对主流编程语言很友好，定义好proto规范文件后，自动生成对应的编程语言代码。编程语言不用再实现接口的参数封装和响应解析了，更专注于业务逻辑的实现。具体到Java语言，就是gRPC自动生成了Bean对象，而且IDE有自动代码提示，相对restful编程，在开发速度上的更有优势。</p>
+<p>Nginx从1.13.10版本开始，支持gRPC协议的转发。Nginx的gRPC转发和grpc-gateway的主要不同在于：nginx不用关心gRPC的具体内容，直接转发到目标端口。而grpc-gateway需要知道gRPC的具体内容，才能实现http和gRPC两种协议之间的转换。简单地说，就是nginx转发不需要proto文件，而grpc-gateway需要proto文件。</p>
+<p><img src="用grpc-gateway实现http和gRPC的服务转发/grpc-gateway architecture.png" alt=""></p>
+<center>grpc-gateway原理</center>
+
+<p>下面给的例子可以在grpc-gateway的官网上找到，再给出Java的例子，实现后台gRPC服务。</p>
+<p><a href="https://github.com/liaorui/grpc-gateway-demo" target="_blank" rel="noopener">grpc-gateway-demo</a></p>
+<p>在实际应用中，如果想增加一个grpc服务，有两种做法：<br>1、在echo_service.proto中增加一个rpc调用：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">rpc getDate(Empty) returns (StringMessage) &#123;</span><br><span class="line">    option (google.api.http) = &#123;</span><br><span class="line">      get: &quot;/v1/example/getdate&quot;</span><br><span class="line">    &#125;;</span><br><span class="line">  &#125;</span><br></pre></td></tr></table></figure></p>
+<p>则 /v1/example/echo 和 /v1/example/getdate 会共用java后台的9090端口服务。</p>
+<p>重新生成go和java的gRPC类，修改EchoImpl.java，增加getDate()方法实现：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">@Override</span><br><span class="line">    public void getDate(EchoServiceOuterClass.StringMessage request, StreamObserver&lt;EchoServiceOuterClass.StringMessage&gt; responseObserver) &#123;</span><br><span class="line">        EchoServiceOuterClass.StringMessage reply = EchoServiceOuterClass.StringMessage.newBuilder()</span><br><span class="line">                .setValue(new SimpleDateFormat(&quot;yyyy-MM-dd HH:mm:ss&quot;).format(new Date())).build();</span><br><span class="line">        responseObserver.onNext(reply);</span><br><span class="line">        responseObserver.onCompleted();</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure></p>
+<p>这种做法是，所有的接口都在一个proto文件里。如果接口很多会导致proto文件越来越大，并难以维护。</p>
+<p>2、重新创建proto描述文件，java后台新增一个服务端口，如9091。同样运行protoc生成go和java相关的程序类。</p>
+<p>需要手工修改的是gateway.go，加上新增的endpoint：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">var (</span><br><span class="line">  echoEndpoint = flag.String(&quot;echo_endpoint&quot;, &quot;localhost:9090&quot;, &quot;echo_endpoint&quot;)</span><br><span class="line">  dateEndpoint = flag.String(&quot;date_endpoint&quot;, &quot;localhost:9091&quot;, &quot;date_endpoint&quot;)</span><br><span class="line">)</span><br><span class="line"></span><br><span class="line">......</span><br><span class="line">  err = gw.RegisterDateServiceHandlerFromEndpoint(ctx, mux, *dateEndpoint, opts)</span><br><span class="line">  if err != nil &#123;</span><br><span class="line">    return err</span><br><span class="line">  &#125;</span><br></pre></td></tr></table></figure></p>
+<p>grpc-gateway至此就可以通过8080对外提供服务，对内转发到多个后台服务端口。</p>
+<p>代码请看这里：<a href="https://github.com/liaorui/grpc-gateway-demo" target="_blank" rel="noopener">grpc-gateway-demo</a></p>
+
+          
+        
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+
+      
+
+      
+
+      
+      
+        <div class="post-eof"></div>
+      
+
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+    
+      
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
     <link itemprop="mainEntityOfPage" href="http://yoursite.com/2018/12/19/Java通过JNA调用C-C-动态库/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -1745,155 +1892,11 @@
 
 
     
-      
-
-  
-
-  
-  
-  
-
-  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
-  
-  
-  
-  <div class="post-block">
-    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2018/03/23/EnableEurekaServer注解如何启动Eureka-Server/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="name" content="Liao Rui">
-      <meta itemprop="description" content="">
-      <meta itemprop="image" content="/images/avatar.jpeg">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="TechLiving">
-    </span>
-
-    
-      <header class="post-header">
-
-        
-        
-          <h1 class="post-title" itemprop="name headline">
-                
-                <a class="post-title-link" href="/2018/03/23/EnableEurekaServer注解如何启动Eureka-Server/" itemprop="url">EnableEurekaServer注解如何启动Eureka Server</a></h1>
-        
-
-        <div class="post-meta">
-          <span class="post-time">
-            
-              <span class="post-meta-item-icon">
-                <i class="fa fa-calendar-o"></i>
-              </span>
-              
-                <span class="post-meta-item-text">发表于</span>
-              
-              <time title="创建于" itemprop="dateCreated datePublished" datetime="2018-03-23T17:47:26+08:00">
-                2018-03-23
-              </time>
-            
-
-            
-
-            
-          </span>
-
-          
-
-          
-            
-              <span class="post-comments-count">
-                <span class="post-meta-divider">|</span>
-                <span class="post-meta-item-icon">
-                  <i class="fa fa-comment-o"></i>
-                </span>
-                <a href="/2018/03/23/EnableEurekaServer注解如何启动Eureka-Server/#comments" itemprop="discussionUrl">
-                  <span class="post-comments-count valine-comment-count" data-xid="/2018/03/23/EnableEurekaServer注解如何启动Eureka-Server/" itemprop="commentCount"></span>
-                </a>
-              </span>
-            
-          
-
-          
-          
-
-          
-
-          
-
-          
-
-        </div>
-      </header>
-    
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-      
-
-      
-        
-          
-            <p>Spring Cloud目前是Java世界里微服务的标准解决方案，它基于Spring Boot，用注解的方式很优雅地将Spring Boot项目加上各种微服务功能，如服务发现，负载均衡，服务熔断等。Spring Cloud包括了Eureka, hystrix, zuul, feign, sleuth, ribbon, turbine等组件。</p>
-<p>@EnableEurekaServer魔法一样的将一个普通的Spring Boot应用变成了Eureka的注册中心，如此简单快捷，它是怎么做到的呢？</p>
-<p>先看Spring Boot的入口程序：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">@EnableEurekaServer</span><br><span class="line">@SpringBootApplication</span><br><span class="line">public class Application &#123;</span><br><span class="line"></span><br><span class="line">	public static void main(String[] args) &#123;</span><br><span class="line">		new SpringApplicationBuilder(Application.class).web(true).run(args);</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
-<p>pom.xml引用：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">&lt;dependency&gt;</span><br><span class="line">	&lt;groupId&gt;org.springframework.cloud&lt;/groupId&gt;</span><br><span class="line">	&lt;artifactId&gt;spring-cloud-starter-eureka-server&lt;/artifactId&gt;</span><br><span class="line">&lt;/dependency&gt;</span><br></pre></td></tr></table></figure></p>
-<p>spring-cloud-starter-eureka-server依赖于spring-cloud-netflix-eureka-server，而spring-cloud-netflix-eureka-server又依赖于spring-boot-starter-web。spring-boot-starter-web又会引入tomcat embedded。</p>
-<p>web(true)方法会将SpringApplication的webEnvironment置为true，上一篇文章<a href="/2018/03/21/Spring%20Boot如何加载tomcat/">《Spring Boot如何加载tomcat》</a>分析了SpringApplication在检测到web环境后，会自动启动tomcat。</p>
-<p>@EnableEurekaServer的实现如下：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">@Target(ElementType.TYPE)</span><br><span class="line">@Retention(RetentionPolicy.RUNTIME)</span><br><span class="line">@Documented</span><br><span class="line">@Import(EurekaServerConfiguration.class)</span><br><span class="line">public @interface EnableEurekaServer &#123;</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
-<p>用Import注解导入了EurekaServerConfiguration，继续跟踪下去：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">@Configuration</span><br><span class="line">@Import(EurekaServerInitializerConfiguration.class)</span><br><span class="line">@EnableDiscoveryClient</span><br><span class="line">@EnableConfigurationProperties(EurekaDashboardProperties.class)</span><br><span class="line">@PropertySource(&quot;classpath:/eureka/server.properties&quot;)</span><br><span class="line">public class EurekaServerConfiguration extends WebMvcConfigurerAdapter &#123;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
-<p>EurekaServerInitializerConfiguration的实现为：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br></pre></td><td class="code"><pre><span class="line">public class EurekaServerInitializerConfiguration</span><br><span class="line">		implements ServletContextAware, SmartLifecycle, Ordered &#123;</span><br><span class="line"></span><br><span class="line">	......</span><br><span class="line"></span><br><span class="line">	@Autowired</span><br><span class="line">	private EurekaServerBootstrap eurekaServerBootstrap;</span><br><span class="line"></span><br><span class="line">	......</span><br><span class="line"></span><br><span class="line">	@Override</span><br><span class="line">	public void start() &#123;</span><br><span class="line">		new Thread(new Runnable() &#123;</span><br><span class="line">			@Override</span><br><span class="line">			public void run() &#123;</span><br><span class="line">				try &#123;</span><br><span class="line">					//TODO: is this class even needed now?</span><br><span class="line">					eurekaServerBootstrap.contextInitialized(EurekaServerInitializerConfiguration.this.servletContext);</span><br><span class="line">					log.info(&quot;Started Eureka Server&quot;);</span><br><span class="line"></span><br><span class="line">					publish(new EurekaRegistryAvailableEvent(getEurekaServerConfig()));</span><br><span class="line">					EurekaServerInitializerConfiguration.this.running = true;</span><br><span class="line">					publish(new EurekaServerStartedEvent(getEurekaServerConfig()));</span><br><span class="line">				&#125;</span><br><span class="line">				catch (Exception ex) &#123;</span><br><span class="line">					// Help!</span><br><span class="line">					log.error(&quot;Could not initialize Eureka servlet context&quot;, ex);</span><br><span class="line">				&#125;</span><br><span class="line">			&#125;</span><br><span class="line">		&#125;).start();</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	......</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
-<p>EurekaServerInitializerConfiguration实现了SmartLifecycle接口，start()方法会自动被Spring框架调用。eurekaServerBootstrap是通过@Autowired自动导入的，因为EurekaServerConfiguration类里有如下@Bean注解：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">@Bean</span><br><span class="line">public EurekaServerBootstrap eurekaServerBootstrap(PeerAwareInstanceRegistry registry,</span><br><span class="line">		EurekaServerContext serverContext) &#123;</span><br><span class="line">	return new EurekaServerBootstrap(this.applicationInfoManager,</span><br><span class="line">			this.eurekaClientConfig, this.eurekaServerConfig, registry,</span><br><span class="line">			serverContext);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
-<p>得到EurekaServerBootstrap的实例后，就依照EurekaBootstrap的实现，将eureka启动起来。</p>
-<p>我们看netflix的eureka的<a href="https://github.com/Netflix/eureka/blob/master/eureka-core/src/main/java/com/netflix/eureka/EurekaBootStrap.java" target="_blank" rel="noopener">EurekaBootstrap</a>代码，它实现了ServletContextListener接口，并且在<a href="https://github.com/Netflix/eureka/blob/master/eureka-server/src/main/webapp/WEB-INF/web.xml" target="_blank" rel="noopener">web.xml</a>中声明了<listener></listener>。因此eureka是作为一个标准的web应用，打包成war包放在tomcat容器里运行的。</p>
-<p>而spring-cloud-starter-eureka-server巧妙地将标准的web应用结构转换成Spring Boot项目，并用EurekaServerBootstrap模拟了EurekaBootStrap的行为，二者的代码实现基本是一致的，都对eureka服务进行了配置。但EurekaServerBootstrap并没有实现ServletContextListener接口，更没有在web.xml中声明listener。Spring Boot项目压根就没有web.xml。</p>
-<p>以上简要地分析了一个@EnableEurekaServer注解是如何实现eureka服务注册中心的，我们还可以深入学习EurekaServerBootstrap和EurekaBootStrap代码，看看eureka是怎么配置的。官方文档上说eureka的server和client的通讯协议是JSON格式的，通过Jersy和XStream传递，后面继续研究具体的通讯过程。</p>
-
-          
-        
-      
-    </div>
-    
-    
-    
-
-    
-
-    
-
-    
-
-    <footer class="post-footer">
-      
-
-      
-
-      
-
-      
-      
-        <div class="post-eof"></div>
-      
-
-    </footer>
-  </div>
-  
-  
-  
-  </article>
-
-
-    
   </section>
 
   
   <nav class="pagination">
-    <span class="page-number current">1</span><a class="page-number" href="/page/2/">2</a><a class="extend next" rel="next" href="/page/2/"><i class="fa fa-angle-right"></i></a>
+    <span class="page-number current">1</span><a class="page-number" href="/page/2/">2</a><a class="page-number" href="/page/3/">3</a><a class="extend next" rel="next" href="/page/2/"><i class="fa fa-angle-right"></i></a>
   </nav>
 
 
@@ -1943,7 +1946,7 @@
               
                 <a href="/archives/">
               
-                  <span class="site-state-item-count">20</span>
+                  <span class="site-state-item-count">21</span>
                   <span class="site-state-item-name">日志</span>
                 </a>
               </div>
