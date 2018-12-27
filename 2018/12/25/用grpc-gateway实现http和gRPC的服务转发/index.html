@@ -86,12 +86,12 @@
 <meta property="og:site_name" content="TechLiving">
 <meta property="og:description" content="在Spring Cloud体系里，负责RPC服务的是Feign组件，它是基于http的服务调用。在吞吐量很高，性能要求很高的场景下，需要用gRPC或thrift。因为它们是基于二进制的TCP协议，数据压缩更紧凑。 gRPC通常用于后台服务之间的模块调用，但对外发布服务，没有Restful API方便。grpc-gateway可以实现restful到gRPC的协议转换。前端用restful接口调用，">
 <meta property="og:locale" content="zh-Hans">
-<meta property="og:image" content="http://yoursite.com/2018/12/25/用grpc-gateway实现http和gRPC的服务转发/用grpc-gateway实现http和gRPC的服务转发/grpc-gateway%20architecture.png">
-<meta property="og:updated_time" content="2018-12-27T09:36:02.646Z">
+<meta property="og:image" content="http://yoursite.com/2018/12/25/用grpc-gateway实现http和gRPC的服务转发/grpc-gateway%20architecture.png">
+<meta property="og:updated_time" content="2018-12-27T09:46:04.683Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="用grpc-gateway实现http和gRPC的服务转发">
 <meta name="twitter:description" content="在Spring Cloud体系里，负责RPC服务的是Feign组件，它是基于http的服务调用。在吞吐量很高，性能要求很高的场景下，需要用gRPC或thrift。因为它们是基于二进制的TCP协议，数据压缩更紧凑。 gRPC通常用于后台服务之间的模块调用，但对外发布服务，没有Restful API方便。grpc-gateway可以实现restful到gRPC的协议转换。前端用restful接口调用，">
-<meta name="twitter:image" content="http://yoursite.com/2018/12/25/用grpc-gateway实现http和gRPC的服务转发/用grpc-gateway实现http和gRPC的服务转发/grpc-gateway%20architecture.png">
+<meta name="twitter:image" content="http://yoursite.com/2018/12/25/用grpc-gateway实现http和gRPC的服务转发/grpc-gateway%20architecture.png">
 
 
 
@@ -335,7 +335,7 @@
 <p>gRPC通常用于后台服务之间的模块调用，但对外发布服务，没有Restful API方便。<a href="https://github.com/grpc-ecosystem/grpc-gateway" target="_blank" rel="noopener">grpc-gateway</a>可以实现restful到gRPC的协议转换。前端用restful接口调用，经过grpc-gateway转换成gRPC协议，交给后台gRPC server服务。</p>
 <p>gRPC对主流编程语言很友好，定义好proto规范文件后，自动生成对应的编程语言代码。编程语言不用再实现接口的参数封装和响应解析了，更专注于业务逻辑的实现。具体到Java语言，就是gRPC自动生成了Bean对象，而且IDE有自动代码提示，相对restful编程，在开发速度上的更有优势。</p>
 <p>Nginx从1.13.10版本开始，支持gRPC协议的转发。Nginx的gRPC转发和grpc-gateway的主要不同在于：nginx不用关心gRPC的具体内容，直接转发到目标端口。而grpc-gateway需要知道gRPC的具体内容，才能实现http和gRPC两种协议之间的转换。简单地说，就是nginx转发不需要proto文件，而grpc-gateway需要proto文件。</p>
-<p><img src="用grpc-gateway实现http和gRPC的服务转发/grpc-gateway architecture.png" alt=""></p>
+<p><img src="/2018/12/25/用grpc-gateway实现http和gRPC的服务转发/grpc-gateway architecture.png" alt=""></p>
 <center>grpc-gateway原理</center>
 
 <p>下面给的例子可以在grpc-gateway的官网上找到，再给出Java的例子，实现后台gRPC服务。</p>
