@@ -252,6 +252,152 @@
   
   
   <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2019/01/11/Greedy正则导致的无限循环/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="Liao Rui">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.jpeg">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="TechLiving">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">
+                
+                <a class="post-title-link" href="/2019/01/11/Greedy正则导致的无限循环/" itemprop="url">Greedy正则导致的无限循环</a></h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2019-01-11T14:08:32+08:00">
+                2019-01-11
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+
+          
+            
+              <span class="post-comments-count">
+                <span class="post-meta-divider">|</span>
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-comment-o"></i>
+                </span>
+                <a href="/2019/01/11/Greedy正则导致的无限循环/#comments" itemprop="discussionUrl">
+                  <span class="post-comments-count valine-comment-count" data-xid="/2019/01/11/Greedy正则导致的无限循环/" itemprop="commentCount"></span>
+                </a>
+              </span>
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        
+          
+            <p>偶然遇到Java正则匹配卡住了，CPU将近100%。代码片断如下：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">Pattern pattern = Pattern.compile(&quot;(x+)+y&quot;);</span><br><span class="line">pattern.matcher(input).find(&quot;xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx&quot;);</span><br></pre></td></tr></table></figure></p>
+<p>Debug了一下，发现在Pattern内部的几个Node子类里不断往返循环：<br>GroupHead —&gt; Loop —&gt; GroupTail —&gt; Curly —&gt; GroupHead</p>
+<p>触发了Greedy匹配的bug，递归调用，尝试匹配更多，但再也跳不出循环。</p>
+<p>网上一查“Java正则 无限循环”，还真找到很多类似的案例。Java官网上也曝出几个bug：<a href="https://bugs.java.com/bugdatabase/view_bug.do?bug_id=6988218" target="_blank" rel="noopener">JDK-6988218</a>、<a href="https://bugs.java.com/bugdatabase/view_bug.do?bug_id=7006761" target="_blank" rel="noopener">JDK-7006761</a>、<a href="https://bugs.java.com/bugdatabase/view_bug.do?bug_id=7111813" target="_blank" rel="noopener">JDK-7111813</a>。</p>
+<p>不可思议的是，2010年就在JDK 6曝出bug了，一直到2016年5月才在JDK 9 b119版本中才解决，这个bug持续了6年时间。</p>
+<p>网上有解决方案，是继承CharSequence，重写charAt()方法，加入超时判断。<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br></pre></td><td class="code"><pre><span class="line">private static class TimeoutRegexCharSequence implements CharSequence &#123;</span><br><span class="line">    private final CharSequence inner; </span><br><span class="line">    private final int timeoutMillis; </span><br><span class="line">    private final long timeoutTime; </span><br><span class="line">    private final String stringToMatch; </span><br><span class="line">    private final String regularExpression; </span><br><span class="line">    public TimeoutRegexCharSequence(CharSequence inner, int timeoutMillis, String stringToMatch, String regularExpression) &#123; </span><br><span class="line">        super(); </span><br><span class="line">        this.inner = inner; </span><br><span class="line">        this.timeoutMillis = timeoutMillis; </span><br><span class="line">        this.stringToMatch = stringToMatch; </span><br><span class="line">        this.regularExpression = regularExpression; </span><br><span class="line">        timeoutTime = System.currentTimeMillis() + timeoutMillis; </span><br><span class="line">    &#125; </span><br><span class="line"></span><br><span class="line">    public char charAt(int index) &#123; </span><br><span class="line">        if (System.currentTimeMillis() &gt; timeoutTime) &#123; </span><br><span class="line">            throw new RuntimeException(&quot;Timeout occurred after &quot; + timeoutMillis + &quot;ms while processing regular expression &apos;&quot; </span><br><span class="line">                            + regularExpression + &quot;&apos; on input &apos;&quot; + stringToMatch + &quot;&apos;!&quot;); </span><br><span class="line">        &#125; </span><br><span class="line">        return inner.charAt(index); </span><br><span class="line">    &#125; </span><br><span class="line"></span><br><span class="line">    public int length() &#123; </span><br><span class="line">        return inner.length(); </span><br><span class="line">    &#125; </span><br><span class="line"></span><br><span class="line">    public CharSequence subSequence(int start, int end) &#123; </span><br><span class="line">        return new TimeoutRegexCharSequence(inner.subSequence(start, end), timeoutMillis, stringToMatch, regularExpression); </span><br><span class="line">    &#125; </span><br><span class="line"></span><br><span class="line">    @Override </span><br><span class="line">    public String toString() &#123; </span><br><span class="line">        return inner.toString(); </span><br><span class="line">    &#125; </span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>由于Pattern的Curly的match()，会调用BmpCharProperty的match()，又会调用CharSequence的charAt()。<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line">/**</span><br><span class="line"> * Optimized version of CharProperty that works only for</span><br><span class="line"> * properties never satisfied by Supplementary characters.</span><br><span class="line"> */</span><br><span class="line">private static abstract class BmpCharProperty extends CharProperty &#123;</span><br><span class="line">    boolean match(Matcher matcher, int i, CharSequence seq) &#123;</span><br><span class="line">        if (i &lt; matcher.to) &#123;</span><br><span class="line">            return isSatisfiedBy(seq.charAt(i))</span><br><span class="line">                &amp;&amp; next.match(matcher, i+1, seq);</span><br><span class="line">        &#125; else &#123;</span><br><span class="line">            matcher.hitEnd = true;</span><br><span class="line">            return false;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>charAt()里抛出异常，跳出死循环。</p>
+<p>这种方案是可以解决死循环问题，但不是完美的解决办法。如果能升级到JDK 9 b119，就能自动解决此bug。</p>
+<p>考虑到目前国内还在大量使用JDK 8，依然存在此bug。如果能从JDK 9 b119以上版本的JDK中抽取Pattern和Matcher两个类，也能很好解决这个问题。</p>
+<p>从JDK 10中抽取这两个类，会发现依赖ASCII、CharPredicates、GraphemeIntHashSet、PatternSyntaxException等类，全部拷出来。但Pattern还调用了Character的codePointOf()方法：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line">private int N() &#123;</span><br><span class="line">        if (read() == &apos;&#123;&apos;) &#123;</span><br><span class="line">            int i = cursor;</span><br><span class="line">            while (cursor &lt; patternLength &amp;&amp; read() != &apos;&#125;&apos;) &#123;</span><br><span class="line">            &#125;</span><br><span class="line">            if (cursor &gt; patternLength)</span><br><span class="line">                throw error(&quot;Unclosed character name escape sequence&quot;);</span><br><span class="line">            String name = new String(temp, i, cursor - i - 1);</span><br><span class="line">            try &#123;</span><br><span class="line">                return Character.codePointOf(name);</span><br><span class="line">            &#125; catch (IllegalArgumentException x) &#123;</span><br><span class="line">                throw error(&quot;Unknown character name [&quot; + name + &quot;]&quot;);</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">        throw error(&quot;Illegal character name escape sequence&quot;);</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure></p>
+<p>而JDK 8里，Character没有codePointOf()方法。如果继续拷贝Character类，发现依赖更多类，很难继续下去。</p>
+<p>因此，重写codePointOf()方法：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line">private static int codePointOf(String name) &#123;</span><br><span class="line">    name = name.trim().toUpperCase(Locale.ROOT);</span><br><span class="line">    int cp = CharacterName.getInstance().getCodePoint(name);</span><br><span class="line">    if (cp != -1)</span><br><span class="line">        return cp;</span><br><span class="line">    try &#123;</span><br><span class="line">        int off = name.lastIndexOf(&apos; &apos;);</span><br><span class="line">        if (off != -1) &#123;</span><br><span class="line">            cp = Integer.parseInt(name.substring(off + 1), 16);</span><br><span class="line">            if (Character.isValidCodePoint(cp) &amp;&amp; name.equals(Character.getName(cp)))</span><br><span class="line">                return cp;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125; catch (Exception x) &#123;</span><br><span class="line">    &#125;</span><br><span class="line">    throw new IllegalArgumentException(&quot;Unrecognized character name :&quot; + name);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>只要再抽取CharacterName类即可，没有别的依赖。另外，Interger.parseInt()方法也要改写，原来是Integer.parseInt(name, off + 1, name.length(), 16)，这是JDK 10新增的API，在JDK 8下不支持，改写成 Integer.parseInt(name.substring(off + 1), 16)。</p>
+<p>至此，比较好的解决了Java greedy正则匹配可能导致的死循环问题。</p>
+<p>附上代码：<a href="https://github.com/liaorui/java-regex" target="_blank" rel="noopener"><b>java-regex</b></a></p>
+
+          
+        
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+
+      
+
+      
+
+      
+      
+        <div class="post-eof"></div>
+      
+
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+    
+      
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
     <link itemprop="mainEntityOfPage" href="http://yoursite.com/2018/12/25/用grpc-gateway实现http和gRPC的服务转发/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -1742,156 +1888,6 @@
 
 
     
-      
-
-  
-
-  
-  
-  
-
-  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
-  
-  
-  
-  <div class="post-block">
-    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2018/03/29/Docker构建Python应用镜像/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="name" content="Liao Rui">
-      <meta itemprop="description" content="">
-      <meta itemprop="image" content="/images/avatar.jpeg">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="TechLiving">
-    </span>
-
-    
-      <header class="post-header">
-
-        
-        
-          <h1 class="post-title" itemprop="name headline">
-                
-                <a class="post-title-link" href="/2018/03/29/Docker构建Python应用镜像/" itemprop="url">Docker构建Python应用镜像</a></h1>
-        
-
-        <div class="post-meta">
-          <span class="post-time">
-            
-              <span class="post-meta-item-icon">
-                <i class="fa fa-calendar-o"></i>
-              </span>
-              
-                <span class="post-meta-item-text">发表于</span>
-              
-              <time title="创建于" itemprop="dateCreated datePublished" datetime="2018-03-29T14:35:51+08:00">
-                2018-03-29
-              </time>
-            
-
-            
-
-            
-          </span>
-
-          
-
-          
-            
-              <span class="post-comments-count">
-                <span class="post-meta-divider">|</span>
-                <span class="post-meta-item-icon">
-                  <i class="fa fa-comment-o"></i>
-                </span>
-                <a href="/2018/03/29/Docker构建Python应用镜像/#comments" itemprop="discussionUrl">
-                  <span class="post-comments-count valine-comment-count" data-xid="/2018/03/29/Docker构建Python应用镜像/" itemprop="commentCount"></span>
-                </a>
-              </span>
-            
-          
-
-          
-          
-
-          
-
-          
-
-          
-
-        </div>
-      </header>
-    
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-      
-
-      
-        
-          
-            <p>最近需要将Python应用程序部署上线，而用户现场的服务器基于安全原因，是不能访问外网的。Python需要访问Postgresql、Hive和ElasticSearch，需要psycopg2-binary、pyhs2、elasticsearch等插件。在测试环境下，通过pip install就能解决，但纯内网环境下，pip失去了作用。</p>
-<p>pyhs2还依赖于cyrus-sasl-devel，有网情况下是通过yum install安装并自动解决rpm包的依赖问题的。另外，nginx、openssl都需要在线内网环境下安装，并且客户机上没有gcc和gcc-c++。</p>
-<p>我们一开始是手工下载各类rpm包，然后rpm -ivh手工安装，很快就陷入了万恶的rpm无限依赖。等最后装上这些环境时，相关rpm依赖包达到了50个以上，非常痛苦。</p>
-<p>尝试用docker解决这些依赖包问题，期望将Python程序运行需要的rpm和pip插件全部打包成一个镜像，然后在客户机上，直接导入镜像，方便运行。网上关于docker的教程已经很好了，但还是再做一下记录，以备将来之需。</p>
-<p>先在测试环境搭一套docker，然后在公共仓库下载一个linux环境。可以根据用户现场的服务器版本，下载对应的linux镜像。我们将在这个镜像的基础上，加入各种依赖文件。这个测试环境，必须是有网的。Docker现在支持Linux, Mac OS, Windows，基于覆盖了常用的各种桌面PC。<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">docker pull centos:7.2.1511</span><br></pre></td></tr></table></figure></p>
-<p>下载完成后，通过 docker images 查看镜像已经在我们本地了。<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">REPOSITORY      TAG             IMAGE ID            CREATED             SIZE</span><br><span class="line">centos          7.2.1511        0a2bad7da9b5        4 months ago        195MB</span><br></pre></td></tr></table></figure></p>
-<p>启动CentOS，只需要进入bash环境即可：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">docker run -p 8001:8001 -ti &lt;IMAGE ID&gt; /bin/bash</span><br></pre></td></tr></table></figure></p>
-<p>IMAGE ID通过docker images查看，只需要输入前4位即可，docker会自动识别。比如上面的IMAGE ID是0a2b。<br>-p参数是将docker的8001端口映射到宿主机的8001端口上，这样就可以在本地机器上通过8001端口直接访问Python程序的接口服务。<br>更多参数通过 docker run –help 来查看。</p>
-<p>接下来，    就可以像在物理机一样操作：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">yum -y install gcc</span><br><span class="line">yum -y install gcc-c++</span><br><span class="line">yum -y install python-devel</span><br><span class="line">yum -y install cyrus-sasl-devel</span><br><span class="line"></span><br><span class="line">curl https://bootstrap.pypa.io/get-pip.py | python</span><br><span class="line">pip install flask</span><br><span class="line">pip install pyhs2</span><br><span class="line">pip install psycopg2-binary</span><br><span class="line">pip install elasticsearch</span><br><span class="line">pip install pyyaml</span><br><span class="line">pip install requests</span><br></pre></td></tr></table></figure></p>
-<p>装好Python环境后，需要将Python程序复制到镜像里面，新开一个终端，运行：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">docker cp python_app &lt;CONTAINER ID&gt;:/root</span><br></pre></td></tr></table></figure></p>
-<p>CONTAINER ID在 docker ps 中看。只需要输入前4位即可，docker会自动识别。</p>
-<p>最后，启动Python程序即可。</p>
-<p>如果上述步骤都成功了，就可以将当前正在运行的docker容器保存为镜像。<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">docker commit &lt;CONTAINER ID&gt; py_docker</span><br></pre></td></tr></table></figure></p>
-<p>再通过 docker images 查看是否存在py_docker。</p>
-<p>这个py_docker就是一个完整的Python运行环境，包含了所有的相关依赖。</p>
-<p>通过以下命令将镜像导出来：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">docker save py_docker &gt; py_docker</span><br></pre></td></tr></table></figure></p>
-<p>现在我们拿到这个镜像文件了，带到客户现场去，直接导入客户机上：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">docker load &lt; py_docker</span><br></pre></td></tr></table></figure></p>
-<p>用以下命令来启动：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">docker run -p 8001:8001 -ti py_docker</span><br></pre></td></tr></table></figure></p>
-<p>通过这些简单的步骤，就解决了在内网环境下，安装Python或其他应用环境所面临的复杂的依赖包。</p>
-<p>如果服务器上连docker也没有，就需要先安装docker。其实docker本身通过rpm安装，也是一堆的依赖。下一篇文章将介绍yum离线仓库的构建方法，将docker依赖的rpm全部离线下载，然后拷到客户机上，本地安装。当docker装上后，后面的各种开发环境和应用环境就好解决了，微服务和应用隔离，就可以快乐的实施了。</p>
-
-          
-        
-      
-    </div>
-    
-    
-    
-
-    
-
-    
-
-    
-
-    <footer class="post-footer">
-      
-
-      
-
-      
-
-      
-      
-        <div class="post-eof"></div>
-      
-
-    </footer>
-  </div>
-  
-  
-  
-  </article>
-
-
-    
   </section>
 
   
@@ -1946,7 +1942,7 @@
               
                 <a href="/archives/">
               
-                  <span class="site-state-item-count">21</span>
+                  <span class="site-state-item-count">22</span>
                   <span class="site-state-item-name">日志</span>
                 </a>
               </div>
@@ -1996,7 +1992,7 @@
 
     <footer id="footer" class="footer">
       <div class="footer-inner">
-        <div class="copyright">&copy; <span itemprop="copyrightYear">2018</span>
+        <div class="copyright">&copy; <span itemprop="copyrightYear">2019</span>
   <span class="with-love">
     <i class="fa fa-user"></i>
   </span>

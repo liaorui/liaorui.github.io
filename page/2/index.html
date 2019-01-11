@@ -252,6 +252,156 @@
   
   
   <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2018/03/29/Docker构建Python应用镜像/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="Liao Rui">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.jpeg">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="TechLiving">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">
+                
+                <a class="post-title-link" href="/2018/03/29/Docker构建Python应用镜像/" itemprop="url">Docker构建Python应用镜像</a></h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2018-03-29T14:35:51+08:00">
+                2018-03-29
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+
+          
+            
+              <span class="post-comments-count">
+                <span class="post-meta-divider">|</span>
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-comment-o"></i>
+                </span>
+                <a href="/2018/03/29/Docker构建Python应用镜像/#comments" itemprop="discussionUrl">
+                  <span class="post-comments-count valine-comment-count" data-xid="/2018/03/29/Docker构建Python应用镜像/" itemprop="commentCount"></span>
+                </a>
+              </span>
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        
+          
+            <p>最近需要将Python应用程序部署上线，而用户现场的服务器基于安全原因，是不能访问外网的。Python需要访问Postgresql、Hive和ElasticSearch，需要psycopg2-binary、pyhs2、elasticsearch等插件。在测试环境下，通过pip install就能解决，但纯内网环境下，pip失去了作用。</p>
+<p>pyhs2还依赖于cyrus-sasl-devel，有网情况下是通过yum install安装并自动解决rpm包的依赖问题的。另外，nginx、openssl都需要在线内网环境下安装，并且客户机上没有gcc和gcc-c++。</p>
+<p>我们一开始是手工下载各类rpm包，然后rpm -ivh手工安装，很快就陷入了万恶的rpm无限依赖。等最后装上这些环境时，相关rpm依赖包达到了50个以上，非常痛苦。</p>
+<p>尝试用docker解决这些依赖包问题，期望将Python程序运行需要的rpm和pip插件全部打包成一个镜像，然后在客户机上，直接导入镜像，方便运行。网上关于docker的教程已经很好了，但还是再做一下记录，以备将来之需。</p>
+<p>先在测试环境搭一套docker，然后在公共仓库下载一个linux环境。可以根据用户现场的服务器版本，下载对应的linux镜像。我们将在这个镜像的基础上，加入各种依赖文件。这个测试环境，必须是有网的。Docker现在支持Linux, Mac OS, Windows，基于覆盖了常用的各种桌面PC。<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">docker pull centos:7.2.1511</span><br></pre></td></tr></table></figure></p>
+<p>下载完成后，通过 docker images 查看镜像已经在我们本地了。<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">REPOSITORY      TAG             IMAGE ID            CREATED             SIZE</span><br><span class="line">centos          7.2.1511        0a2bad7da9b5        4 months ago        195MB</span><br></pre></td></tr></table></figure></p>
+<p>启动CentOS，只需要进入bash环境即可：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">docker run -p 8001:8001 -ti &lt;IMAGE ID&gt; /bin/bash</span><br></pre></td></tr></table></figure></p>
+<p>IMAGE ID通过docker images查看，只需要输入前4位即可，docker会自动识别。比如上面的IMAGE ID是0a2b。<br>-p参数是将docker的8001端口映射到宿主机的8001端口上，这样就可以在本地机器上通过8001端口直接访问Python程序的接口服务。<br>更多参数通过 docker run –help 来查看。</p>
+<p>接下来，    就可以像在物理机一样操作：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">yum -y install gcc</span><br><span class="line">yum -y install gcc-c++</span><br><span class="line">yum -y install python-devel</span><br><span class="line">yum -y install cyrus-sasl-devel</span><br><span class="line"></span><br><span class="line">curl https://bootstrap.pypa.io/get-pip.py | python</span><br><span class="line">pip install flask</span><br><span class="line">pip install pyhs2</span><br><span class="line">pip install psycopg2-binary</span><br><span class="line">pip install elasticsearch</span><br><span class="line">pip install pyyaml</span><br><span class="line">pip install requests</span><br></pre></td></tr></table></figure></p>
+<p>装好Python环境后，需要将Python程序复制到镜像里面，新开一个终端，运行：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">docker cp python_app &lt;CONTAINER ID&gt;:/root</span><br></pre></td></tr></table></figure></p>
+<p>CONTAINER ID在 docker ps 中看。只需要输入前4位即可，docker会自动识别。</p>
+<p>最后，启动Python程序即可。</p>
+<p>如果上述步骤都成功了，就可以将当前正在运行的docker容器保存为镜像。<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">docker commit &lt;CONTAINER ID&gt; py_docker</span><br></pre></td></tr></table></figure></p>
+<p>再通过 docker images 查看是否存在py_docker。</p>
+<p>这个py_docker就是一个完整的Python运行环境，包含了所有的相关依赖。</p>
+<p>通过以下命令将镜像导出来：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">docker save py_docker &gt; py_docker</span><br></pre></td></tr></table></figure></p>
+<p>现在我们拿到这个镜像文件了，带到客户现场去，直接导入客户机上：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">docker load &lt; py_docker</span><br></pre></td></tr></table></figure></p>
+<p>用以下命令来启动：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">docker run -p 8001:8001 -ti py_docker</span><br></pre></td></tr></table></figure></p>
+<p>通过这些简单的步骤，就解决了在内网环境下，安装Python或其他应用环境所面临的复杂的依赖包。</p>
+<p>如果服务器上连docker也没有，就需要先安装docker。其实docker本身通过rpm安装，也是一堆的依赖。下一篇文章将介绍yum离线仓库的构建方法，将docker依赖的rpm全部离线下载，然后拷到客户机上，本地安装。当docker装上后，后面的各种开发环境和应用环境就好解决了，微服务和应用隔离，就可以快乐的实施了。</p>
+
+          
+        
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+
+      
+
+      
+
+      
+      
+        <div class="post-eof"></div>
+      
+
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+    
+      
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
     <link itemprop="mainEntityOfPage" href="http://yoursite.com/2018/03/23/EnableEurekaServer注解如何启动Eureka-Server/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -1549,156 +1699,6 @@
 
 
     
-      
-
-  
-
-  
-  
-  
-
-  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
-  
-  
-  
-  <div class="post-block">
-    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2018/01/27/ElasticSearch同步数据库/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="name" content="Liao Rui">
-      <meta itemprop="description" content="">
-      <meta itemprop="image" content="/images/avatar.jpeg">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="TechLiving">
-    </span>
-
-    
-      <header class="post-header">
-
-        
-        
-          <h1 class="post-title" itemprop="name headline">
-                
-                <a class="post-title-link" href="/2018/01/27/ElasticSearch同步数据库/" itemprop="url">ElasticSearch同步数据库</a></h1>
-        
-
-        <div class="post-meta">
-          <span class="post-time">
-            
-              <span class="post-meta-item-icon">
-                <i class="fa fa-calendar-o"></i>
-              </span>
-              
-                <span class="post-meta-item-text">发表于</span>
-              
-              <time title="创建于" itemprop="dateCreated datePublished" datetime="2018-01-27T17:27:13+08:00">
-                2018-01-27
-              </time>
-            
-
-            
-
-            
-          </span>
-
-          
-
-          
-            
-              <span class="post-comments-count">
-                <span class="post-meta-divider">|</span>
-                <span class="post-meta-item-icon">
-                  <i class="fa fa-comment-o"></i>
-                </span>
-                <a href="/2018/01/27/ElasticSearch同步数据库/#comments" itemprop="discussionUrl">
-                  <span class="post-comments-count valine-comment-count" data-xid="/2018/01/27/ElasticSearch同步数据库/" itemprop="commentCount"></span>
-                </a>
-              </span>
-            
-          
-
-          
-          
-
-          
-
-          
-
-          
-
-        </div>
-      </header>
-    
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-      
-
-      
-        
-          
-            <p>在需要全文检索的场景下，ElasticSearch（后面统一简称ES）可以有效降低关系型数据库Like查询的系统负载和开销，提升检索精度和速度。</p>
-<p>如何做到ES和数据库的数据同步？这里介绍一下logstash-input-jdbc插件（logstash 5以上版本已经自带）实现分钟级别的数据同步。</p>
-<p>举例说明如何用logstash实施同步数据库。假如有这样一张航班信息表：(只是举例，不考虑实际项目中表设计需要遵守的约束和优化规则)<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line">create table flight_info &#123;</span><br><span class="line">    id int auto_increment,</span><br><span class="line">    flight_no varchar(10),</span><br><span class="line">    airline varchar(2),</span><br><span class="line">    flight_num varchar(5),</span><br><span class="line">    flight_date varchar(10),</span><br><span class="line">    depcode varchar(3),</span><br><span class="line">    arrcode varchar(3),</span><br><span class="line">    deptime varchar(20),</span><br><span class="line">    arrtime varchar(20),</span><br><span class="line">    flight_status varchar(10),</span><br><span class="line">    create_time date,</span><br><span class="line">    update_time date</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
-<p>一条典型的数据记录如：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">insert into flight_info values (1,&apos;CZ3117&apos;,&apos;CZ&apos;,&apos;3117&apos;,&apos;2018-01-27&apos;,&apos;WUH&apos;,&apos;PEK&apos;,&apos;2017-01-27 09:42:00&apos;,&apos;2017-01-27 11:20:00&apos;,&apos;到达&apos;,&apos;2017-01-26 10:00:00&apos;,&apos;2017-01-27 11:20:30&apos;);</span><br></pre></td></tr></table></figure></p>
-<p>如果该表不断生成新的航班数据，并且已有数据也在不断更新状态，那么logstash也需要3个阶段实施：<br>1、先全表导入<br>因为表里可能已经存在了相当量的旧数据，需要全部导入到ES。<br>logstash配置如下：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br></pre></td><td class="code"><pre><span class="line">input &#123;</span><br><span class="line">    stdin &#123;</span><br><span class="line">    &#125;</span><br><span class="line">    jdbc &#123;</span><br><span class="line">      jdbc_connection_string =&gt; &quot;jdbc:mysql://...&quot;</span><br><span class="line">      jdbc_user =&gt; &quot;test&quot;</span><br><span class="line">      jdbc_password =&gt; &quot;test&quot;</span><br><span class="line">      jdbc_driver_library =&gt; &quot;FULL_PATH/mysql-connector-java-5.1.41.jar&quot;</span><br><span class="line">      jdbc_driver_class =&gt; &quot;com.mysql.jdbc.Driver&quot;</span><br><span class="line">      jdbc_paging_enabled =&gt; &quot;true&quot;</span><br><span class="line">      jdbc_page_size =&gt; &quot;5000&quot;</span><br><span class="line">      statement_filepath =&gt; &quot;FULL_PATH/jdbc.sql&quot;</span><br><span class="line">      schedule =&gt; &quot;0 18 * * *&quot;</span><br><span class="line">      type =&gt; &quot;flight-info&quot;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">filter &#123;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">output &#123;</span><br><span class="line">    elasticsearch &#123;</span><br><span class="line">        hosts =&gt; [&quot;ES_IP:9200&quot;]</span><br><span class="line">        index =&gt; &quot;flight-status-%&#123;flight_date&#125;&quot;</span><br><span class="line">        document_id =&gt; &quot;%&#123;flight_no&#125;-%&#123;flight_date&#125;-%&#123;depcode&#125;-%&#123;arrcode&#125;&quot;</span><br><span class="line">    &#125;</span><br><span class="line">    stdout &#123;</span><br><span class="line">        codec =&gt; json_lines</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
-<p>注意jdbc_driver_library和statement_filepath都要用全路径。schedule的规则类似Linux的crontab定时配置规则，分别是分、小时、天、月、周。</p>
-<p>jdbc.sql里配置SQL语句：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">select * from flight_info</span><br></pre></td></tr></table></figure></p>
-<p>实际项目中，不要用*，需要什么数据就取什么数据。</p>
-<p>数据导完后，需要增量更新，进行后面2个步骤。</p>
-<p>2、insert数据同步<br>可以根据表的自增id或创建时间来做新增的同步。拿创建时间举例,jdbc_new.sql配置如下：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">select * from flight_info where create_time &gt; :sql_last_value and create_time &gt; &apos;2018-01-27 18:00:00&apos;</span><br></pre></td></tr></table></figure></p>
-<p>注意，logstash-input-jdbc会自动记录上一次最大的时间或id。假如schedule配置为每分钟执行：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">schedule =&gt; &quot;* * * * *&quot;</span><br></pre></td></tr></table></figure></p>
-<p>初始化时，sql_last_value是没有值的，需要限定一下sql从哪条记录开始查询，即：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">create_time &gt; &apos;2018-01-27 18:00:00&apos;</span><br></pre></td></tr></table></figure></p>
-<p>如果不限定，又会从表的第1条数据开始导入，即全表导入了。</p>
-<p>执行一次后，假如最后一条新增数据时间为：2018-01-27 18:00:59，那么下一次执行时sql_last_value自动变成 2018-01-27 18:00:59, 即：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">select * from flight_info where create_time &gt; &apos;2018-01-27 18:00:59&apos; and create_time &gt; &apos;2018-01-27 18:00:00&apos;</span><br></pre></td></tr></table></figure></p>
-<p>这样就实现了每分钟自动获取表中新增加的数据。</p>
-<p>3、update数据同步<br>前面完成了insert数据同步，对于表里旧数据的update操作，怎么办呢？利用update_time字段，jdbc_update.sql配置如下：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">select * from flight_info where update_time &gt; :sql_last_value and update_time &gt; &apos;2018-01-27 18:00:00&apos;</span><br></pre></td></tr></table></figure></p>
-<p>跟insert数据同步一样，也要限定一下第一次操作时sql_last_value为空时的SQL数据范围，避免全表操作。一旦sql_last_value有值了，后面就可以增量对update数据同步了。</p>
-<p>综合上面3个步骤，基本实现了对表的旧数据、insert新数据、update数据的同步。由于schedule最小粒度为1分钟，所以理论上logstash同步到ES的滞后时间最大为1分钟。</p>
-<p>实现项目中，如果对数据及时性要求很高，就需要应用程序去实时更新ES了。当然应用程序用异步线程更新或推送消息队列，可能是更合理的选择。ES的API其实也是支持异步更新操作的。</p>
-<p>logstash-input-jdbc没办法解决数据库的delete操作。只能将物理删除转找成逻辑删除，即将某个状态值update成已删除状态。也可以由应用程序在delete操作后去实时更新ES。</p>
-
-          
-        
-      
-    </div>
-    
-    
-    
-
-    
-
-    
-
-    
-
-    <footer class="post-footer">
-      
-
-      
-
-      
-
-      
-      
-        <div class="post-eof"></div>
-      
-
-    </footer>
-  </div>
-  
-  
-  
-  </article>
-
-
-    
   </section>
 
   
@@ -1753,7 +1753,7 @@
               
                 <a href="/archives/">
               
-                  <span class="site-state-item-count">21</span>
+                  <span class="site-state-item-count">22</span>
                   <span class="site-state-item-name">日志</span>
                 </a>
               </div>
@@ -1803,7 +1803,7 @@
 
     <footer id="footer" class="footer">
       <div class="footer-inner">
-        <div class="copyright">&copy; <span itemprop="copyrightYear">2018</span>
+        <div class="copyright">&copy; <span itemprop="copyrightYear">2019</span>
   <span class="with-love">
     <i class="fa fa-user"></i>
   </span>
