@@ -252,6 +252,166 @@
   
   
   <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2018/04/13/Mac上搭建Hadoop-Hive-Spark开发环境/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="Liao Rui">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.jpeg">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="TechLiving">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">
+                
+                <a class="post-title-link" href="/2018/04/13/Mac上搭建Hadoop-Hive-Spark开发环境/" itemprop="url">Mac上搭建Hadoop+Hive+Spark开发环境</a></h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2018-04-13T10:14:37+08:00">
+                2018-04-13
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+
+          
+            
+              <span class="post-comments-count">
+                <span class="post-meta-divider">|</span>
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-comment-o"></i>
+                </span>
+                <a href="/2018/04/13/Mac上搭建Hadoop-Hive-Spark开发环境/#comments" itemprop="discussionUrl">
+                  <span class="post-comments-count valine-comment-count" data-xid="/2018/04/13/Mac上搭建Hadoop-Hive-Spark开发环境/" itemprop="commentCount"></span>
+                </a>
+              </span>
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        
+          
+            <p>最近在学习java大数据组件，被hadoop+hive+spark等组件的各种抽象概念搞的云里雾里。文档和书都在读，但如果不去实际运行demo和example，终归记不住，缺乏深刻的印象。</p>
+<p>对学习一门新技术新框架，我的经验是第一步看文档，建立初步的概念和印象，第二步跑demo，更直观的看常见的API有哪些，程序是如何调用的，第三步，就是项目中实战运用。最后一步，要精深，需要debug跟进源码。</p>
+<p>前段时间基本完成了第一步，对这些大数据组件有了基本的概念，现在准备学习demo，实际运行。网上有很多教程来搭建本地学习环境，但真正动手做起来，才发现还是会遇到各种问题。大家搭建的版本不一样，操作系统环境不一样，遇到的问题也是不一样的。零零碎碎的查官方文档和其他教程，花了将近2天的时间，才真正在Mac系统上搭建起来。</p>
+<p>我始终觉得mac做开发，相对windows还是很有优势的，毕竟mac更像linux，配置起来更方便。既然自己也花了这么长时间才搭建好开发环境，就有必要总结和记录一下了。</p>
+<p>主要是为了学习spark的examples，由于spark最新版本是2.3.0，依赖的hive是1.2.1版本。而brew安装hadoop和hive的版本依次是3.0.0和2.3.0，运行spark sql时，会出问题。</p>
+<p>第一次运行bin/spark-submit –class “org.apache.spark.examples.sql.hive.JavaSparkHiveExample” spark-examples-1.0-SNAPSHOT.jar，会成功在hive中创建src表，但第二次运行时会报错：”org.apache.spark.sql.catalyst.analysis.NoSuchDatabaseException: Database ‘default’ not found;”</p>
+<p>用maven dependency:tree来看依赖情况，spark sql依赖的是hive 1.2.1。<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">[INFO] \- org.apache.spark:spark-hive_2.11:jar:2.3.0:compile</span><br><span class="line">[INFO]    +- com.twitter:parquet-hadoop-bundle:jar:1.6.0:compile</span><br><span class="line">[INFO]    +- org.spark-project.hive:hive-exec:jar:1.2.1.spark2:compile</span><br><span class="line">[INFO]    |  +- commons-io:commons-io:jar:2.4:compile</span><br><span class="line">// ......</span><br><span class="line"></span><br><span class="line">[INFO]    +- org.spark-project.hive:hive-metastore:jar:1.2.1.spark2:compile</span><br><span class="line">[INFO]    |  +- com.jolbox:bonecp:jar:0.8.0.RELEASE:compile</span><br><span class="line">[INFO]    |  +- commons-cli:commons-cli:jar:1.2:compile</span><br><span class="line">[INFO]    |  +- commons-logging:commons-logging:jar:1.1.3:compile</span><br><span class="line">// ......</span><br></pre></td></tr></table></figure></p>
+<p>所以手工从官网下载hive 1.2.1版本。从官网更新时间来说，hive 1.2.1 和 2.3.3 是目前主力版本。hive 2相当第一代产品有哪些新功能，后面再研究。</p>
+<h3 id="Hadoop-2-6-5-搭建"><a href="#Hadoop-2-6-5-搭建" class="headerlink" title="Hadoop 2.6.5 搭建"></a>Hadoop 2.6.5 搭建</h3><p>1、编辑配置文件<br>etc/hadoop/core-site.xml:<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">&lt;configuration&gt;</span><br><span class="line">    &lt;property&gt;</span><br><span class="line">        &lt;name&gt;fs.defaultFS&lt;/name&gt;</span><br><span class="line">        &lt;value&gt;hdfs://localhost:9000&lt;/value&gt;</span><br><span class="line">    &lt;/property&gt;</span><br><span class="line">    &lt;property&gt;</span><br><span class="line">        &lt;name&gt;hadoop.tmp.dir&lt;/name&gt;</span><br><span class="line">        &lt;value&gt;/Users/liaorui/data/hadoop2/hdfs-tmp&lt;/value&gt;</span><br><span class="line">    &lt;/property&gt;</span><br><span class="line">&lt;/configuration&gt;</span><br></pre></td></tr></table></figure></p>
+<p>注意要配置hadoop.tmp.dir，因为默认hadoop是把数据存在/tmp下的，电脑重启后会丢失。</p>
+<p>etc/hadoop/hdfs-site.xml:<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">&lt;configuration&gt;</span><br><span class="line">    &lt;property&gt;</span><br><span class="line">        &lt;name&gt;dfs.replication&lt;/name&gt;</span><br><span class="line">        &lt;value&gt;1&lt;/value&gt;</span><br><span class="line">    &lt;/property&gt;</span><br><span class="line">&lt;/configuration&gt;</span><br></pre></td></tr></table></figure></p>
+<p>etc/hadoop/mapred-site.xml:<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">&lt;configuration&gt;</span><br><span class="line">    &lt;property&gt;</span><br><span class="line">        &lt;name&gt;mapreduce.framework.name&lt;/name&gt;</span><br><span class="line">        &lt;value&gt;yarn&lt;/value&gt;</span><br><span class="line">    &lt;/property&gt;</span><br><span class="line">    &lt;property&gt;</span><br><span class="line">        &lt;name&gt;mapreduce.application.classpath&lt;/name&gt;</span><br><span class="line">        &lt;value&gt;$HADOOP_MAPRED_HOME/share/hadoop/mapreduce/*:$HADOOP_MAPRED_HOME/share/hadoop/mapreduce/lib/*&lt;/value&gt;</span><br><span class="line">    &lt;/property&gt;</span><br><span class="line">&lt;/configuration&gt;</span><br></pre></td></tr></table></figure></p>
+<p>2、格式化dfs文件系统，并启动<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">$ bin/hdfs namenode -format</span><br><span class="line"></span><br><span class="line"># Start NameNode daemon and DataNode daemon:</span><br><span class="line">$ sbin/start-dfs.sh</span><br></pre></td></tr></table></figure></p>
+<p>3、建立执行MapReduce任务的HDFS目录。<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">$ bin/hdfs dfs -mkdir /user</span><br><span class="line">$ bin/hdfs dfs -mkdir /user/&lt;username&gt;</span><br></pre></td></tr></table></figure></p>
+<p>4、启动yarn<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">#Start ResourceManager daemon and NodeManager daemon:</span><br><span class="line">$ sbin/start-yarn.sh</span><br><span class="line"></span><br><span class="line">#Browse the web interface for the ResourceManager; by default it is available at:</span><br><span class="line">    * ResourceManager - http://localhost:8088/</span><br><span class="line"></span><br><span class="line">#When you’re done, stop the daemons with:</span><br><span class="line">$ sbin/stop-yarn.sh</span><br></pre></td></tr></table></figure></p>
+<h3 id="Hive-1-2-1搭建"><a href="#Hive-1-2-1搭建" class="headerlink" title="Hive 1.2.1搭建"></a>Hive 1.2.1搭建</h3><p>1、hive配置<br>conf/hive-site.xml<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br></pre></td><td class="code"><pre><span class="line">&lt;configuration&gt;</span><br><span class="line">  &lt;property&gt;</span><br><span class="line">    &lt;name&gt;javax.jdo.option.ConnectionURL&lt;/name&gt;</span><br><span class="line">    &lt;value&gt;jdbc:mysql://localhost/metastore&lt;/value&gt;</span><br><span class="line">    &lt;description&gt;the URL of the MySQL database&lt;/description&gt;</span><br><span class="line">  &lt;/property&gt;</span><br><span class="line">  &lt;property&gt;</span><br><span class="line">    &lt;name&gt;javax.jdo.option.ConnectionDriverName&lt;/name&gt;</span><br><span class="line">    &lt;value&gt;com.mysql.jdbc.Driver&lt;/value&gt;</span><br><span class="line">  &lt;/property&gt;</span><br><span class="line">  &lt;property&gt;</span><br><span class="line">    &lt;name&gt;javax.jdo.option.ConnectionUserName&lt;/name&gt;</span><br><span class="line">    &lt;value&gt;hive&lt;/value&gt;</span><br><span class="line">  &lt;/property&gt;</span><br><span class="line">  &lt;property&gt;</span><br><span class="line">    &lt;name&gt;javax.jdo.option.ConnectionPassword&lt;/name&gt;</span><br><span class="line">    &lt;value&gt;hive&lt;/value&gt;</span><br><span class="line">  &lt;/property&gt;</span><br><span class="line">  &lt;property&gt;</span><br><span class="line">    &lt;name&gt;datanucleus.autoCreateSchema&lt;/name&gt;</span><br><span class="line">    &lt;value&gt;false&lt;/value&gt;</span><br><span class="line">  &lt;/property&gt;</span><br><span class="line">  &lt;property&gt;</span><br><span class="line">    &lt;name&gt;datanucleus.fixedDatastore&lt;/name&gt;</span><br><span class="line">    &lt;value&gt;true&lt;/value&gt;</span><br><span class="line">  &lt;/property&gt;</span><br><span class="line">  &lt;property&gt;</span><br><span class="line">    &lt;name&gt;datanucleus.autoStartMechanism&lt;/name&gt;</span><br><span class="line">    &lt;value&gt;SchemaTable&lt;/value&gt;</span><br><span class="line">  &lt;/property&gt;</span><br><span class="line">  &lt;property&gt;</span><br><span class="line">    &lt;name&gt;hive.metastore.uris&lt;/name&gt;</span><br><span class="line">    &lt;value&gt;thrift://localhost:9083&lt;/value&gt;</span><br><span class="line">    &lt;description&gt;IP address (or fully-qualified domain name) and port of the metastore host&lt;/description&gt;</span><br><span class="line">  &lt;/property&gt;</span><br><span class="line">  &lt;property&gt;</span><br><span class="line">    &lt;name&gt;hive.metastore.schema.verification&lt;/name&gt;</span><br><span class="line">    &lt;value&gt;true&lt;/value&gt;</span><br><span class="line">  &lt;/property&gt;</span><br><span class="line">&lt;/configuration&gt;</span><br></pre></td></tr></table></figure></p>
+<p>2、创建mysql database<br>hive的数据存储在hdfs上，但库表元信息metastore是存储在第三方数据库的。默认是用derby内嵌启动的，但无法多用户访问。所以通常是用mysql或postgresql作为metastore存储。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">$ mysql -u root -p</span><br><span class="line">Enter password:</span><br><span class="line">mysql&gt; CREATE DATABASE metastore;</span><br><span class="line">mysql&gt; USE metastore;</span><br><span class="line"></span><br><span class="line">mysql&gt; CREATE USER &apos;hive&apos;@&apos;localhost&apos; IDENTIFIED BY &apos;hive&apos;;</span><br><span class="line">...</span><br><span class="line">mysql&gt; REVOKE ALL PRIVILEGES, GRANT OPTION FROM &apos;hive&apos;@&apos;localhost&apos;;</span><br><span class="line">mysql&gt; GRANT ALL PRIVILEGES ON metastore.* TO &apos;hive&apos;@&apos;localhost&apos;;</span><br><span class="line">mysql&gt; FLUSH PRIVILEGES;</span><br><span class="line">mysql&gt; quit;</span><br></pre></td></tr></table></figure>
+<p>3、将mysql connector驱动复制到hive/lib目录下，注意用 mysql-connector-java-5.1.22.jar 及以后版本。更早版本可能会报错：<br>com.mysql.jdbc.exceptions.jdbc4.MySQLSyntaxErrorException: You have an error in your SQL syntax; check the manual that corresponds to your MySQL server version for the right syntax to use near ‘OPTION SQL_SELECT_LIMIT=DEFAULT’ at line 1</p>
+<p>4、设置HADOOP_HOME环境变量<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">#Hive uses Hadoop, so you must have Hadoop in your path OR</span><br><span class="line"></span><br><span class="line">$ export HADOOP_HOME=&lt;hadoop-install-dir&gt;</span><br></pre></td></tr></table></figure></p>
+<p>5、在dfs中建立hive需要的目录<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">$ $HADOOP_HOME/bin/hadoop fs -mkdir /tmp</span><br><span class="line">$ $HADOOP_HOME/bin/hadoop fs -mkdir /user/hive/warehouse</span><br><span class="line">$ $HADOOP_HOME/bin/hadoop fs -chmod g+w /tmp</span><br><span class="line">$ $HADOOP_HOME/bin/hadoop fs -chmod g+w /user/hive/warehouse</span><br></pre></td></tr></table></figure></p>
+<p>6、初始化metastore数据库<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$HIVE_HOME/bin/schematool -dbType mysql -initSchema</span><br></pre></td></tr></table></figure></p>
+<p>HiveServer2 (HS2) is a server interface that enables remote clients to execute queries against Hive and retrieve the results (a more detailed intro here). The current implementation, based on Thrift RPC, is an improved version of HiveServer and supports multi-client concurrency and authentication. It is designed to provide better support for open API clients like JDBC and ODBC. </p>
+<p>7、运行metastore服务<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">bin/hive --service metastore</span><br></pre></td></tr></table></figure></p>
+<h3 id="Spark-2-3-3搭建"><a href="#Spark-2-3-3搭建" class="headerlink" title="Spark 2.3.3搭建"></a>Spark 2.3.3搭建</h3><p>1、将hadoop的core-site.xml、hdfs-site.xml和hive的hive-site.xml 放在spark的conf下，spark会自动加载hive。</p>
+<p>2、将hive-exec-1.2.1.spark2.jar、hive-metastore-1.2.1.spark2.jar、libfb303-0.9.3.jar、libthrift-0.9.3.jar、spark-hive_2.11-2.3.0.jar 放到spark的jars目录。<br>将hive/lib/jline-2.12.jar放到hadoop/share/hadoop/yarn/lib目录，并删除旧版本hive/lib/jline-0.9.jar。</p>
+<p>3、将spark/examples目录的demo源码新建maven工程，pom.xml如下：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br></pre></td><td class="code"><pre><span class="line">&lt;dependencies&gt;</span><br><span class="line">    &lt;dependency&gt;</span><br><span class="line">        &lt;groupId&gt;org.apache.spark&lt;/groupId&gt;</span><br><span class="line">        &lt;artifactId&gt;spark-core_2.11&lt;/artifactId&gt;</span><br><span class="line">        &lt;version&gt;2.3.0&lt;/version&gt;</span><br><span class="line">    &lt;/dependency&gt;</span><br><span class="line">    &lt;dependency&gt;</span><br><span class="line">        &lt;groupId&gt;org.apache.spark&lt;/groupId&gt;</span><br><span class="line">        &lt;artifactId&gt;spark-sql_2.11&lt;/artifactId&gt;</span><br><span class="line">        &lt;version&gt;2.3.0&lt;/version&gt;</span><br><span class="line">    &lt;/dependency&gt;</span><br><span class="line">    &lt;dependency&gt;</span><br><span class="line">        &lt;groupId&gt;org.apache.spark&lt;/groupId&gt;</span><br><span class="line">        &lt;artifactId&gt;spark-mllib_2.11&lt;/artifactId&gt;</span><br><span class="line">        &lt;version&gt;2.3.0&lt;/version&gt;</span><br><span class="line">    &lt;/dependency&gt;</span><br><span class="line">    &lt;dependency&gt;</span><br><span class="line">        &lt;groupId&gt;org.apache.spark&lt;/groupId&gt;</span><br><span class="line">        &lt;artifactId&gt;spark-streaming-kafka-0-10_2.11&lt;/artifactId&gt;</span><br><span class="line">        &lt;version&gt;2.3.0&lt;/version&gt;</span><br><span class="line">    &lt;/dependency&gt;</span><br><span class="line">    &lt;dependency&gt;</span><br><span class="line">        &lt;groupId&gt;com.github.scopt&lt;/groupId&gt;</span><br><span class="line">        &lt;artifactId&gt;scopt_2.11&lt;/artifactId&gt;</span><br><span class="line">        &lt;version&gt;3.7.0&lt;/version&gt;</span><br><span class="line">    &lt;/dependency&gt;</span><br><span class="line">    &lt;dependency&gt;</span><br><span class="line">        &lt;groupId&gt;org.apache.spark&lt;/groupId&gt;</span><br><span class="line">        &lt;artifactId&gt;spark-hive_2.11&lt;/artifactId&gt;</span><br><span class="line">        &lt;version&gt;2.3.0&lt;/version&gt;</span><br><span class="line">    &lt;/dependency&gt;</span><br><span class="line">&lt;/dependencies&gt;</span><br></pre></td></tr></table></figure></p>
+<p>将spark examples导入转成maven工程，就方便在idea或eclipse里debug学习了，也方便编译成jar，用spark-submit提交任务。</p>
+<p>4、提交spark任务<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">bin/spark-submit --class &quot;org.apache.spark.examples.sql.hive.JavaSparkHiveExample&quot; spark-examples-1.0-SNAPSHOT.jar</span><br></pre></td></tr></table></figure></p>
+<p>至此，可以运行spark的examples程序了。</p>
+
+          
+        
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+
+      
+
+      
+
+      
+      
+        <div class="post-eof"></div>
+      
+
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+    
+      
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
     <link itemprop="mainEntityOfPage" href="http://yoursite.com/2018/03/29/Docker构建Python应用镜像/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -1548,157 +1708,6 @@
 
 
     
-      
-
-  
-
-  
-  
-  
-
-  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
-  
-  
-  
-  <div class="post-block">
-    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2018/01/31/基于Rxjava-Retrofit的爬虫框架/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="name" content="Liao Rui">
-      <meta itemprop="description" content="">
-      <meta itemprop="image" content="/images/avatar.jpeg">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="TechLiving">
-    </span>
-
-    
-      <header class="post-header">
-
-        
-        
-          <h1 class="post-title" itemprop="name headline">
-                
-                <a class="post-title-link" href="/2018/01/31/基于Rxjava-Retrofit的爬虫框架/" itemprop="url">基于RxJava+Retrofit的爬虫框架</a></h1>
-        
-
-        <div class="post-meta">
-          <span class="post-time">
-            
-              <span class="post-meta-item-icon">
-                <i class="fa fa-calendar-o"></i>
-              </span>
-              
-                <span class="post-meta-item-text">发表于</span>
-              
-              <time title="创建于" itemprop="dateCreated datePublished" datetime="2018-01-31T08:27:23+08:00">
-                2018-01-31
-              </time>
-            
-
-            
-
-            
-          </span>
-
-          
-
-          
-            
-              <span class="post-comments-count">
-                <span class="post-meta-divider">|</span>
-                <span class="post-meta-item-icon">
-                  <i class="fa fa-comment-o"></i>
-                </span>
-                <a href="/2018/01/31/基于Rxjava-Retrofit的爬虫框架/#comments" itemprop="discussionUrl">
-                  <span class="post-comments-count valine-comment-count" data-xid="/2018/01/31/基于Rxjava-Retrofit的爬虫框架/" itemprop="commentCount"></span>
-                </a>
-              </span>
-            
-          
-
-          
-          
-
-          
-
-          
-
-          
-
-        </div>
-      </header>
-    
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-      
-
-      
-        
-          
-            <p>一个良好的爬虫框架需要具备以下特性：<br>1、用大量的代理IP突破IP封锁。<br>2、灵活的http头信息和Get/Post参数设置，应对http头信息里cookie、user-agent甚至是自定义头信息的加密认证。<br>3、方便的抓取任务调度，多级页面抓取，后面层级页面依赖于前面层级页面的解析参数。<br>4、爬取失败后的自动重试。</p>
-<p>本文探讨一种RxJava和Retrofit搭建的抓取框架，从上述几个角度分析这套方案是否具备实际可用性。</p>
-<p><a href="https://github.com/ReactiveX/RxJava" target="_blank" rel="noopener">RxJava</a>在github上的介绍是:<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">a library for composing asynchronous and event-based programs using observable sequences for the Java VM.</span><br></pre></td></tr></table></figure></p>
-<p>即：用可观察的序列来组装异步和事件驱动的库，适用于Java JVM之上。</p>
-<p>RxJava是<a href="http://reactivex.io" target="_blank" rel="noopener">ReactiveX</a>的Java版本实现，还有javascript、c++、python、go等各种语言实现。ReactiveX定义了map、flatmap等各类发射器，还有filter、first、last等各种过滤器。也有merge、zip、average、count、max、min、sum等组装操作，并支持错误事件的处理。RxJava构建在ReactiveX之上，当然也是支持的。</p>
-<p>RxJava最明显的两个特点是：异步和基于事件流。基于事件流，形象地讲就是数据在一根管子里流动，经过操作（数据过滤、数据变换等）后，到另外一根管子里继续流动。数据就是在很多个管子里被筛选和流动，我们只关心最后一根管子里流出来的数据，就是我们想要的结果。这一切都是异步的。</p>
-<p>RxJava map操作示意图<br><img src="/2018/01/31/基于Rxjava-Retrofit的爬虫框架/map_operator.png" alt=""></p>
-<p>异步特性符合爬虫框架的基本要求。当需要投放大量的抓取任务时，异步特性可以保证任务投放是连续的且固定频率的。如果多线程请求因为网络超时大量阻塞了，任务都下达不了，肯定抓不完了。</p>
-<p>基于事件流的特性正好用于多级页面抓取时的任务调度。常规的异步请求，都是基于回调的，但callback is evil，在多级页面抓取时，必须导致回调里再回调，不断的嵌套回调。如果再加上失败重试逻辑，代码简直让人崩溃。</p>
-<p>当失败了，框架需要自动重新发送请求。RxJava在网络超时后，会收到Throwable事件，利用它的retry特性在收到Throwable事件后继续网络请求。</p>
-<p>关键代码为：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br></pre></td><td class="code"><pre><span class="line">Observable.range(1, days) // 循环抓取多少天</span><br><span class="line">    .flatMap(it -&gt; Observable.fromArray(routeList.toArray())</span><br><span class="line">        .map(route -&gt; &#123;  // 每个航线都和这个日期组合</span><br><span class="line">            String date = new DateTime().plusDays(it).toString(&quot;yyyy-MM-dd&quot;) ;</span><br><span class="line">            return new String[] &#123; route[0], route[1], date &#125;;</span><br><span class="line">        &#125;))</span><br><span class="line">    .flatMap(route -&gt; Observable.create(subscriber -&gt; &#123;</span><br><span class="line">            Retrofit retrofit = retrBuilder.client(getOkHttpClient()).build();</span><br><span class="line">            ChunqiuService service = retrofit.create(ChunqiuService.class);</span><br><span class="line">            //...</span><br><span class="line">            Call&lt;String&gt; call = service.query(referer, userAgent, route[0], route[1], route[2], 0, 1, &quot;null&quot;, &quot;false&quot;, &quot;false&quot;, &quot;false&quot;, &quot;false&quot;, 1, 0, &quot;false&quot;);</span><br><span class="line">            try &#123;</span><br><span class="line">                Response&lt;String&gt; res = call.execute();</span><br><span class="line">                subscriber.onNext(res.body());</span><br><span class="line">            &#125; catch (Exception ex) &#123;    </span><br><span class="line">                //网络超时后捕获异常，onError事件往后发射</span><br><span class="line">                subscriber.onError(ex);</span><br><span class="line">            &#125;</span><br><span class="line">            subscriber.onComplete();</span><br><span class="line">        &#125;).retryWhen(errors -&gt; errors   //收到onError发射的事件，进行重试</span><br><span class="line">            .flatMap(e -&gt; &#123;</span><br><span class="line">                e.printStackTrace();</span><br><span class="line">                return Observable.just(e);</span><br><span class="line">            &#125;)</span><br><span class="line">            .zipWith(Observable.range(1, 3), (n, i) -&gt; i)   //重试3次</span><br><span class="line">                .flatMap(retryCount -&gt; &#123;</span><br><span class="line">                    System.out.println(String.format(&quot;retry %s,%s,%s&quot;, route[0], route[1], route[2]));</span><br><span class="line">                    // 暂停200毫秒后再重试</span><br><span class="line">                    return Observable.timer(200, TimeUnit.MILLISECONDS); </span><br><span class="line">                &#125;)</span><br><span class="line">        )</span><br><span class="line">        .subscribeOn(Schedulers.io()) //在IO线程上执行,不阻塞主线程</span><br><span class="line">    )</span><br></pre></td></tr></table></figure></p>
-<p>上面的flatMap是事件调度的关键，可以将输入数据route转换成一个Observable，然后在Observable里定义各种网络操作和业务逻辑操作。如果是多层级的页面抓取，就用多个flatMap。flatMap之间的数据是从上往下依次流转的。而这些都是异步的。</p>
-<p>因此RxJava可以解决抓取任务调度和失败自动重试的问题。</p>
-<p><a href="http://square.github.io/retrofit/" target="_blank" rel="noopener">Retrofit</a>是基于Java接口来配置的网络请求框架。我们只需要定义好请求的baseurl，请求头和请求参数，Retrofit会自动帮我们拿回数据，不用关心网络请求细节。实际上，Retrofit底层就是用okhttp来管理网络请求的。</p>
-<p>代码如下：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">public interface ChunqiuService &#123;</span><br><span class="line"></span><br><span class="line">    @FormUrlEncoded</span><br><span class="line">    @POST(&quot;Flights/SearchByTime&quot;)</span><br><span class="line">    Call&lt;String&gt; query(@Header(&quot;Referer&quot;) String referer, @Header(&quot;User-Agent&quot;) String userAgent,</span><br><span class="line">            @Field(&quot;Departure&quot;) String departure, @Field(&quot;Arrival&quot;) String arrival, </span><br><span class="line">            @Field(&quot;DepartureDate&quot;) String departureDate);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
-<p>这个接口类表明是用Post请求方式，url是Flights/SearchByTime，头参数分别是referer和userAgent，retrofit会自动映射成Referer和User-Agent，并设置到http请求头中。Post包体参数有departure、arrival和departureDate，并分别映射成Field标签标记的名称。</p>
-<p>业务代码里调用：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">Retrofit retrofit = retrBuilder.client(getOkHttpClient()).build();</span><br><span class="line">ChunqiuService service = retrofit.create(ChunqiuService.class);</span><br><span class="line">//... 这里设置referer和userAgent</span><br><span class="line">Call&lt;String&gt; call = service.query(referer, userAgent, route[0], route[1], route[2], 0, 1, &quot;null&quot;, &quot;false&quot;, &quot;false&quot;, &quot;false&quot;, &quot;false&quot;, 1, 0, &quot;false&quot;);</span><br><span class="line"></span><br><span class="line">Response&lt;String&gt; res = call.execute();</span><br></pre></td></tr></table></figure></p>
-<p>基于接口声明式的定义，来配置网络请求，很清晰。但存在一个问题：如果网站有改版，基本Java接口定义的配置需要改代码，并重启Java程序。因此可以进一步抽象接口，把url，header，params都作为入参传到方法里，然后用json或spring xml配置具体的值，做到不用改Java代码，甚至动态加载配置文件而不用重启Java程序。<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">public interface RequestService &#123;</span><br><span class="line">    @Get</span><br><span class="line">    Call&lt;String&gt; queryGet(@Url String url, @HeaderMap Map&lt;String, String&gt; headers, @QueryMap Map&lt;String, String&gt; fields);</span><br><span class="line"></span><br><span class="line">    @Post</span><br><span class="line">    Call&lt;String&gt; queryPost(@Url String url, @HeaderMap Map&lt;String, String&gt; headers, @FieldMap Map&lt;String, String&gt; fields);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
-<p>Retrofit基本能解决网络请求的灵活配置问题。</p>
-<p>最后是代理IP的问题，可以从网上收集公开免费的代理网站，加入到自己的代码库里，并定时校验。另外，也有一些收费的代理网站，直接提供了接口，方便定制开发，一次性获取很多代理IP，收费从几十到几百不等，基本能满足对代理IP的需求了。</p>
-<p><b>Talk is cheap. Show me the code.<br><a href="https://github.com/liaorui/rx-demo" target="_blank" rel="noopener">rx-demo</a></b></p>
-
-          
-        
-      
-    </div>
-    
-    
-    
-
-    
-
-    
-
-    
-
-    <footer class="post-footer">
-      
-
-      
-
-      
-
-      
-      
-        <div class="post-eof"></div>
-      
-
-    </footer>
-  </div>
-  
-  
-  
-  </article>
-
-
-    
   </section>
 
   
@@ -1753,7 +1762,7 @@
               
                 <a href="/archives/">
               
-                  <span class="site-state-item-count">22</span>
+                  <span class="site-state-item-count">23</span>
                   <span class="site-state-item-name">日志</span>
                 </a>
               </div>

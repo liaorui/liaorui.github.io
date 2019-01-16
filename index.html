@@ -252,6 +252,160 @@
   
   
   <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2019/01/16/kafka-msgpack-json-将msgpack和protobuf转化成json/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="Liao Rui">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.jpeg">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="TechLiving">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">
+                
+                <a class="post-title-link" href="/2019/01/16/kafka-msgpack-json-将msgpack和protobuf转化成json/" itemprop="url">kafka-msgpack-json: 将msgpack和protobuf转化成json</a></h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2019-01-16T09:28:23+08:00">
+                2019-01-16
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+
+          
+            
+              <span class="post-comments-count">
+                <span class="post-meta-divider">|</span>
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-comment-o"></i>
+                </span>
+                <a href="/2019/01/16/kafka-msgpack-json-将msgpack和protobuf转化成json/#comments" itemprop="discussionUrl">
+                  <span class="post-comments-count valine-comment-count" data-xid="/2019/01/16/kafka-msgpack-json-将msgpack和protobuf转化成json/" itemprop="commentCount"></span>
+                </a>
+              </span>
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        
+          
+            <p>用kafka-console-consumer.sh消费kafka数据时，如果数据是msgpack或protobuf的二进制格式时，打印出来的是乱码，不方便查看。</p>
+<p>如何开发一个程序，直接消费kafka的msgpack和protobuf格式的数据，然后转化成json格式输出到控制台呢？</p>
+<p>一种思路是，直接调用KafkaConsumer API，Java程序开发，代价比较高。因为kafka-console-consumer.sh支持很多参数，包括–topic，–bootstrap-server，–zookeeper等，重新开发一套程序，要兼容这些参数，很困难。</p>
+<p>另一种思路是，借用linux的管道，前面还是用kafka-console-consumer.sh消费，用管道(|)将流数据传给Java程序，Java程序只负责解析二进制数据即可。</p>
+<p>具体做法是：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">kafka-console-consumer.sh --bootstrap-server localhost:9092 --topic test | msgpack2json.sh</span><br></pre></td></tr></table></figure></p>
+<p>msgpack2json.sh只要简单调用java -jar msgpack2json.jar即可。</p>
+<p>Java程序读取管道也很简单：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line">BufferedInputStream bis = new BufferedInputStream(System.in);</span><br><span class="line">byte[] buffer = new byte[4096];</span><br><span class="line">int length;</span><br><span class="line">while ((length = bis.read(buffer)) != -1) &#123;</span><br><span class="line">    if (length &lt;= 1) &#123;</span><br><span class="line">        continue;</span><br><span class="line">    &#125;</span><br><span class="line">    byte[] data = new byte[length];</span><br><span class="line">    System.arraycopy(buffer, 0, data, 0, length);</span><br><span class="line">    </span><br><span class="line">    // handle data</span><br><span class="line">    ......</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>这个方案存在问题。由于是二进制流，BufferedInputStream不知道要读多少个字节才是一条完整的kafka数据。缓存的buffer数组设置大一些，可以减少读到不完整记录的情况。kafka数据量小的时候，问题不大，但在kafka数据量大时，还是会经常出现读不到完整记录的情况。</p>
+<p>如果是文本记录，用BufferedReader读取，换行符分隔记录，就不会出现这个问题。</p>
+<p>所以管道读取不是很好的解决方案。</p>
+<p>从kafka-console-consumer.sh这个脚本入手，底层调用的是ConsoleConsumer这个类。<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">exec $(dirname $0)/kafka-run-class.sh kafka.tools.ConsoleConsumer &quot;$@&quot;</span><br></pre></td></tr></table></figure></p>
+<p>研究ConsoleConsumer.scala的源码，发现打印到控制台的代码是：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line">class DefaultMessageFormatter extends MessageFormatter &#123;</span><br><span class="line">    ......</span><br><span class="line">    def writeTo(consumerRecord: ConsumerRecord[Array[Byte], Array[Byte]], output: PrintStream) &#123;</span><br><span class="line"></span><br><span class="line">        def write(deserializer: Option[Deserializer[_]], sourceBytes: Array[Byte], separator: Array[Byte]) &#123;</span><br><span class="line">          val nonNullBytes = Option(sourceBytes).getOrElse(&quot;null&quot;.getBytes)</span><br><span class="line">          val convertedBytes = deserializer.map(_.deserialize(null, nonNullBytes).toString.getBytes).getOrElse(nonNullBytes)</span><br><span class="line">          output.write(convertedBytes)</span><br><span class="line">          output.write(separator)</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        ......</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>只要将convertedBytes转化成json就达到目的了。</p>
+<p>改造后的代码如下：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line">def write(deserializer: Option[Deserializer[_]], sourceBytes: Array[Byte], separator: Array[Byte]) &#123;</span><br><span class="line">      val nonNullBytes = Option(sourceBytes).getOrElse(&quot;null&quot;.getBytes)</span><br><span class="line">      val convertedBytes = deserializer.map(_.deserialize(null, nonNullBytes).toString.getBytes).getOrElse(nonNullBytes)</span><br><span class="line"></span><br><span class="line">      var parser: Parser = new MsgPackParser</span><br><span class="line">      if (ConsoleConsumer.protoDesc != null) &#123;</span><br><span class="line">        val protoDescBuf = Files.readAllBytes(Paths.get(ConsoleConsumer.protoDesc))</span><br><span class="line">        parser = new ProtobufParser(protoDescBuf)</span><br><span class="line">      &#125;</span><br><span class="line"></span><br><span class="line">      try &#123;</span><br><span class="line">        output.write(parser.parse(convertedBytes).getBytes)</span><br><span class="line">        output.write(separator)</span><br><span class="line">      &#125; catch &#123;</span><br><span class="line">        case e: Throwable =&gt;</span><br><span class="line">          System.err.println(&quot;Unknown error when running consumer: &quot;, e)</span><br><span class="line">          System.exit(1)</span><br><span class="line">      &#125;</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure></p>
+<p>默认按msgpack格式进行解析，如果脚本运行参数里有–proto参数，则按protobuf格式数据进行解析。</p>
+<p>由于protobuf格式是需要描述文件进行解析的，是.proto结尾的文件，定义了每个字段的类型和字段的顺序。如果要动态解析protobuf数据，就需要在脚本参数里指定.proto的描述文件。</p>
+<p>Google的protobuf API里，有DynamicMessage类型，可以用DynamicMessage.parseFrom(Descriptors.Descriptor, byte[])进行解析。byte[]可以传kafka的二进制数据，而Descriptors.Descriptor对象构造需要如下步骤。</p>
+<p>1、生成descriptor文件。<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">protoc --descriptor_set_out=test.proto.desc test.proto</span><br></pre></td></tr></table></figure></p>
+<p>2、从descriptor文件生成Descriptors.Descriptor对象。<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">byte[] schemaDescBuf = Files.readAllBytes(Paths.get(&quot;test.proto.desc&quot;));</span><br><span class="line">DynamicSchema schema = DynamicSchema.parseFrom(schemaDescBuf);</span><br><span class="line">Set&lt;String&gt; set = schema.getMessageTypes();</span><br><span class="line">descriptor = schema.getMessageDescriptor(set.iterator().next());</span><br></pre></td></tr></table></figure></p>
+<p>这里引用了protobuf-dynamic包。<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">&lt;dependency&gt;</span><br><span class="line">    &lt;groupId&gt;com.github.os72&lt;/groupId&gt;</span><br><span class="line">    &lt;artifactId&gt;protobuf-dynamic&lt;/artifactId&gt;</span><br><span class="line">    &lt;version&gt;1.0.0&lt;/version&gt;</span><br><span class="line">&lt;/dependency&gt;</span><br></pre></td></tr></table></figure></p>
+<p>注意，程序默认取的是proto文件里第1个定义的Message对象。如果proto文件里定义了几个Message对象，则程序很难知道要匹配哪个。建议一个proto文件只定义一个Message。</p>
+<p>改造ConsumerConfig.scala程序后，参照kafka-console-consumer.sh生成脚本kafka-msgpack-json.sh。</p>
+<p>最终调用方式为：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"># msgpack</span><br><span class="line">kafka-msgpack-json.sh --bootstrap-server localhost:9092 --topic test</span><br><span class="line"></span><br><span class="line"># protobuf</span><br><span class="line">kafka-msgpack-json.sh --bootstrap-server localhost:9092 --topic test --proto log_message.proto</span><br></pre></td></tr></table></figure></p>
+<p>附上程序源码：<a href="https://github.com/liaorui/kafka-msgpack-json" target="_blank" rel="noopener">kafka-msgpack-json</a></p>
+
+          
+        
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+
+      
+
+      
+
+      
+      
+        <div class="post-eof"></div>
+      
+
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+    
+      
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
     <link itemprop="mainEntityOfPage" href="http://yoursite.com/2019/01/11/Greedy正则导致的无限循环/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -1728,166 +1882,6 @@
 
 
     
-      
-
-  
-
-  
-  
-  
-
-  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
-  
-  
-  
-  <div class="post-block">
-    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2018/04/13/Mac上搭建Hadoop-Hive-Spark开发环境/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="name" content="Liao Rui">
-      <meta itemprop="description" content="">
-      <meta itemprop="image" content="/images/avatar.jpeg">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="TechLiving">
-    </span>
-
-    
-      <header class="post-header">
-
-        
-        
-          <h1 class="post-title" itemprop="name headline">
-                
-                <a class="post-title-link" href="/2018/04/13/Mac上搭建Hadoop-Hive-Spark开发环境/" itemprop="url">Mac上搭建Hadoop+Hive+Spark开发环境</a></h1>
-        
-
-        <div class="post-meta">
-          <span class="post-time">
-            
-              <span class="post-meta-item-icon">
-                <i class="fa fa-calendar-o"></i>
-              </span>
-              
-                <span class="post-meta-item-text">发表于</span>
-              
-              <time title="创建于" itemprop="dateCreated datePublished" datetime="2018-04-13T10:14:37+08:00">
-                2018-04-13
-              </time>
-            
-
-            
-
-            
-          </span>
-
-          
-
-          
-            
-              <span class="post-comments-count">
-                <span class="post-meta-divider">|</span>
-                <span class="post-meta-item-icon">
-                  <i class="fa fa-comment-o"></i>
-                </span>
-                <a href="/2018/04/13/Mac上搭建Hadoop-Hive-Spark开发环境/#comments" itemprop="discussionUrl">
-                  <span class="post-comments-count valine-comment-count" data-xid="/2018/04/13/Mac上搭建Hadoop-Hive-Spark开发环境/" itemprop="commentCount"></span>
-                </a>
-              </span>
-            
-          
-
-          
-          
-
-          
-
-          
-
-          
-
-        </div>
-      </header>
-    
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-      
-
-      
-        
-          
-            <p>最近在学习java大数据组件，被hadoop+hive+spark等组件的各种抽象概念搞的云里雾里。文档和书都在读，但如果不去实际运行demo和example，终归记不住，缺乏深刻的印象。</p>
-<p>对学习一门新技术新框架，我的经验是第一步看文档，建立初步的概念和印象，第二步跑demo，更直观的看常见的API有哪些，程序是如何调用的，第三步，就是项目中实战运用。最后一步，要精深，需要debug跟进源码。</p>
-<p>前段时间基本完成了第一步，对这些大数据组件有了基本的概念，现在准备学习demo，实际运行。网上有很多教程来搭建本地学习环境，但真正动手做起来，才发现还是会遇到各种问题。大家搭建的版本不一样，操作系统环境不一样，遇到的问题也是不一样的。零零碎碎的查官方文档和其他教程，花了将近2天的时间，才真正在Mac系统上搭建起来。</p>
-<p>我始终觉得mac做开发，相对windows还是很有优势的，毕竟mac更像linux，配置起来更方便。既然自己也花了这么长时间才搭建好开发环境，就有必要总结和记录一下了。</p>
-<p>主要是为了学习spark的examples，由于spark最新版本是2.3.0，依赖的hive是1.2.1版本。而brew安装hadoop和hive的版本依次是3.0.0和2.3.0，运行spark sql时，会出问题。</p>
-<p>第一次运行bin/spark-submit –class “org.apache.spark.examples.sql.hive.JavaSparkHiveExample” spark-examples-1.0-SNAPSHOT.jar，会成功在hive中创建src表，但第二次运行时会报错：”org.apache.spark.sql.catalyst.analysis.NoSuchDatabaseException: Database ‘default’ not found;”</p>
-<p>用maven dependency:tree来看依赖情况，spark sql依赖的是hive 1.2.1。<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">[INFO] \- org.apache.spark:spark-hive_2.11:jar:2.3.0:compile</span><br><span class="line">[INFO]    +- com.twitter:parquet-hadoop-bundle:jar:1.6.0:compile</span><br><span class="line">[INFO]    +- org.spark-project.hive:hive-exec:jar:1.2.1.spark2:compile</span><br><span class="line">[INFO]    |  +- commons-io:commons-io:jar:2.4:compile</span><br><span class="line">// ......</span><br><span class="line"></span><br><span class="line">[INFO]    +- org.spark-project.hive:hive-metastore:jar:1.2.1.spark2:compile</span><br><span class="line">[INFO]    |  +- com.jolbox:bonecp:jar:0.8.0.RELEASE:compile</span><br><span class="line">[INFO]    |  +- commons-cli:commons-cli:jar:1.2:compile</span><br><span class="line">[INFO]    |  +- commons-logging:commons-logging:jar:1.1.3:compile</span><br><span class="line">// ......</span><br></pre></td></tr></table></figure></p>
-<p>所以手工从官网下载hive 1.2.1版本。从官网更新时间来说，hive 1.2.1 和 2.3.3 是目前主力版本。hive 2相当第一代产品有哪些新功能，后面再研究。</p>
-<h3 id="Hadoop-2-6-5-搭建"><a href="#Hadoop-2-6-5-搭建" class="headerlink" title="Hadoop 2.6.5 搭建"></a>Hadoop 2.6.5 搭建</h3><p>1、编辑配置文件<br>etc/hadoop/core-site.xml:<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">&lt;configuration&gt;</span><br><span class="line">    &lt;property&gt;</span><br><span class="line">        &lt;name&gt;fs.defaultFS&lt;/name&gt;</span><br><span class="line">        &lt;value&gt;hdfs://localhost:9000&lt;/value&gt;</span><br><span class="line">    &lt;/property&gt;</span><br><span class="line">    &lt;property&gt;</span><br><span class="line">        &lt;name&gt;hadoop.tmp.dir&lt;/name&gt;</span><br><span class="line">        &lt;value&gt;/Users/liaorui/data/hadoop2/hdfs-tmp&lt;/value&gt;</span><br><span class="line">    &lt;/property&gt;</span><br><span class="line">&lt;/configuration&gt;</span><br></pre></td></tr></table></figure></p>
-<p>注意要配置hadoop.tmp.dir，因为默认hadoop是把数据存在/tmp下的，电脑重启后会丢失。</p>
-<p>etc/hadoop/hdfs-site.xml:<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">&lt;configuration&gt;</span><br><span class="line">    &lt;property&gt;</span><br><span class="line">        &lt;name&gt;dfs.replication&lt;/name&gt;</span><br><span class="line">        &lt;value&gt;1&lt;/value&gt;</span><br><span class="line">    &lt;/property&gt;</span><br><span class="line">&lt;/configuration&gt;</span><br></pre></td></tr></table></figure></p>
-<p>etc/hadoop/mapred-site.xml:<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">&lt;configuration&gt;</span><br><span class="line">    &lt;property&gt;</span><br><span class="line">        &lt;name&gt;mapreduce.framework.name&lt;/name&gt;</span><br><span class="line">        &lt;value&gt;yarn&lt;/value&gt;</span><br><span class="line">    &lt;/property&gt;</span><br><span class="line">    &lt;property&gt;</span><br><span class="line">        &lt;name&gt;mapreduce.application.classpath&lt;/name&gt;</span><br><span class="line">        &lt;value&gt;$HADOOP_MAPRED_HOME/share/hadoop/mapreduce/*:$HADOOP_MAPRED_HOME/share/hadoop/mapreduce/lib/*&lt;/value&gt;</span><br><span class="line">    &lt;/property&gt;</span><br><span class="line">&lt;/configuration&gt;</span><br></pre></td></tr></table></figure></p>
-<p>2、格式化dfs文件系统，并启动<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">$ bin/hdfs namenode -format</span><br><span class="line"></span><br><span class="line"># Start NameNode daemon and DataNode daemon:</span><br><span class="line">$ sbin/start-dfs.sh</span><br></pre></td></tr></table></figure></p>
-<p>3、建立执行MapReduce任务的HDFS目录。<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">$ bin/hdfs dfs -mkdir /user</span><br><span class="line">$ bin/hdfs dfs -mkdir /user/&lt;username&gt;</span><br></pre></td></tr></table></figure></p>
-<p>4、启动yarn<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">#Start ResourceManager daemon and NodeManager daemon:</span><br><span class="line">$ sbin/start-yarn.sh</span><br><span class="line"></span><br><span class="line">#Browse the web interface for the ResourceManager; by default it is available at:</span><br><span class="line">    * ResourceManager - http://localhost:8088/</span><br><span class="line"></span><br><span class="line">#When you’re done, stop the daemons with:</span><br><span class="line">$ sbin/stop-yarn.sh</span><br></pre></td></tr></table></figure></p>
-<h3 id="Hive-1-2-1搭建"><a href="#Hive-1-2-1搭建" class="headerlink" title="Hive 1.2.1搭建"></a>Hive 1.2.1搭建</h3><p>1、hive配置<br>conf/hive-site.xml<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br></pre></td><td class="code"><pre><span class="line">&lt;configuration&gt;</span><br><span class="line">  &lt;property&gt;</span><br><span class="line">    &lt;name&gt;javax.jdo.option.ConnectionURL&lt;/name&gt;</span><br><span class="line">    &lt;value&gt;jdbc:mysql://localhost/metastore&lt;/value&gt;</span><br><span class="line">    &lt;description&gt;the URL of the MySQL database&lt;/description&gt;</span><br><span class="line">  &lt;/property&gt;</span><br><span class="line">  &lt;property&gt;</span><br><span class="line">    &lt;name&gt;javax.jdo.option.ConnectionDriverName&lt;/name&gt;</span><br><span class="line">    &lt;value&gt;com.mysql.jdbc.Driver&lt;/value&gt;</span><br><span class="line">  &lt;/property&gt;</span><br><span class="line">  &lt;property&gt;</span><br><span class="line">    &lt;name&gt;javax.jdo.option.ConnectionUserName&lt;/name&gt;</span><br><span class="line">    &lt;value&gt;hive&lt;/value&gt;</span><br><span class="line">  &lt;/property&gt;</span><br><span class="line">  &lt;property&gt;</span><br><span class="line">    &lt;name&gt;javax.jdo.option.ConnectionPassword&lt;/name&gt;</span><br><span class="line">    &lt;value&gt;hive&lt;/value&gt;</span><br><span class="line">  &lt;/property&gt;</span><br><span class="line">  &lt;property&gt;</span><br><span class="line">    &lt;name&gt;datanucleus.autoCreateSchema&lt;/name&gt;</span><br><span class="line">    &lt;value&gt;false&lt;/value&gt;</span><br><span class="line">  &lt;/property&gt;</span><br><span class="line">  &lt;property&gt;</span><br><span class="line">    &lt;name&gt;datanucleus.fixedDatastore&lt;/name&gt;</span><br><span class="line">    &lt;value&gt;true&lt;/value&gt;</span><br><span class="line">  &lt;/property&gt;</span><br><span class="line">  &lt;property&gt;</span><br><span class="line">    &lt;name&gt;datanucleus.autoStartMechanism&lt;/name&gt;</span><br><span class="line">    &lt;value&gt;SchemaTable&lt;/value&gt;</span><br><span class="line">  &lt;/property&gt;</span><br><span class="line">  &lt;property&gt;</span><br><span class="line">    &lt;name&gt;hive.metastore.uris&lt;/name&gt;</span><br><span class="line">    &lt;value&gt;thrift://localhost:9083&lt;/value&gt;</span><br><span class="line">    &lt;description&gt;IP address (or fully-qualified domain name) and port of the metastore host&lt;/description&gt;</span><br><span class="line">  &lt;/property&gt;</span><br><span class="line">  &lt;property&gt;</span><br><span class="line">    &lt;name&gt;hive.metastore.schema.verification&lt;/name&gt;</span><br><span class="line">    &lt;value&gt;true&lt;/value&gt;</span><br><span class="line">  &lt;/property&gt;</span><br><span class="line">&lt;/configuration&gt;</span><br></pre></td></tr></table></figure></p>
-<p>2、创建mysql database<br>hive的数据存储在hdfs上，但库表元信息metastore是存储在第三方数据库的。默认是用derby内嵌启动的，但无法多用户访问。所以通常是用mysql或postgresql作为metastore存储。</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">$ mysql -u root -p</span><br><span class="line">Enter password:</span><br><span class="line">mysql&gt; CREATE DATABASE metastore;</span><br><span class="line">mysql&gt; USE metastore;</span><br><span class="line"></span><br><span class="line">mysql&gt; CREATE USER &apos;hive&apos;@&apos;localhost&apos; IDENTIFIED BY &apos;hive&apos;;</span><br><span class="line">...</span><br><span class="line">mysql&gt; REVOKE ALL PRIVILEGES, GRANT OPTION FROM &apos;hive&apos;@&apos;localhost&apos;;</span><br><span class="line">mysql&gt; GRANT ALL PRIVILEGES ON metastore.* TO &apos;hive&apos;@&apos;localhost&apos;;</span><br><span class="line">mysql&gt; FLUSH PRIVILEGES;</span><br><span class="line">mysql&gt; quit;</span><br></pre></td></tr></table></figure>
-<p>3、将mysql connector驱动复制到hive/lib目录下，注意用 mysql-connector-java-5.1.22.jar 及以后版本。更早版本可能会报错：<br>com.mysql.jdbc.exceptions.jdbc4.MySQLSyntaxErrorException: You have an error in your SQL syntax; check the manual that corresponds to your MySQL server version for the right syntax to use near ‘OPTION SQL_SELECT_LIMIT=DEFAULT’ at line 1</p>
-<p>4、设置HADOOP_HOME环境变量<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">#Hive uses Hadoop, so you must have Hadoop in your path OR</span><br><span class="line"></span><br><span class="line">$ export HADOOP_HOME=&lt;hadoop-install-dir&gt;</span><br></pre></td></tr></table></figure></p>
-<p>5、在dfs中建立hive需要的目录<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">$ $HADOOP_HOME/bin/hadoop fs -mkdir /tmp</span><br><span class="line">$ $HADOOP_HOME/bin/hadoop fs -mkdir /user/hive/warehouse</span><br><span class="line">$ $HADOOP_HOME/bin/hadoop fs -chmod g+w /tmp</span><br><span class="line">$ $HADOOP_HOME/bin/hadoop fs -chmod g+w /user/hive/warehouse</span><br></pre></td></tr></table></figure></p>
-<p>6、初始化metastore数据库<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$HIVE_HOME/bin/schematool -dbType mysql -initSchema</span><br></pre></td></tr></table></figure></p>
-<p>HiveServer2 (HS2) is a server interface that enables remote clients to execute queries against Hive and retrieve the results (a more detailed intro here). The current implementation, based on Thrift RPC, is an improved version of HiveServer and supports multi-client concurrency and authentication. It is designed to provide better support for open API clients like JDBC and ODBC. </p>
-<p>7、运行metastore服务<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">bin/hive --service metastore</span><br></pre></td></tr></table></figure></p>
-<h3 id="Spark-2-3-3搭建"><a href="#Spark-2-3-3搭建" class="headerlink" title="Spark 2.3.3搭建"></a>Spark 2.3.3搭建</h3><p>1、将hadoop的core-site.xml、hdfs-site.xml和hive的hive-site.xml 放在spark的conf下，spark会自动加载hive。</p>
-<p>2、将hive-exec-1.2.1.spark2.jar、hive-metastore-1.2.1.spark2.jar、libfb303-0.9.3.jar、libthrift-0.9.3.jar、spark-hive_2.11-2.3.0.jar 放到spark的jars目录。<br>将hive/lib/jline-2.12.jar放到hadoop/share/hadoop/yarn/lib目录，并删除旧版本hive/lib/jline-0.9.jar。</p>
-<p>3、将spark/examples目录的demo源码新建maven工程，pom.xml如下：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br></pre></td><td class="code"><pre><span class="line">&lt;dependencies&gt;</span><br><span class="line">    &lt;dependency&gt;</span><br><span class="line">        &lt;groupId&gt;org.apache.spark&lt;/groupId&gt;</span><br><span class="line">        &lt;artifactId&gt;spark-core_2.11&lt;/artifactId&gt;</span><br><span class="line">        &lt;version&gt;2.3.0&lt;/version&gt;</span><br><span class="line">    &lt;/dependency&gt;</span><br><span class="line">    &lt;dependency&gt;</span><br><span class="line">        &lt;groupId&gt;org.apache.spark&lt;/groupId&gt;</span><br><span class="line">        &lt;artifactId&gt;spark-sql_2.11&lt;/artifactId&gt;</span><br><span class="line">        &lt;version&gt;2.3.0&lt;/version&gt;</span><br><span class="line">    &lt;/dependency&gt;</span><br><span class="line">    &lt;dependency&gt;</span><br><span class="line">        &lt;groupId&gt;org.apache.spark&lt;/groupId&gt;</span><br><span class="line">        &lt;artifactId&gt;spark-mllib_2.11&lt;/artifactId&gt;</span><br><span class="line">        &lt;version&gt;2.3.0&lt;/version&gt;</span><br><span class="line">    &lt;/dependency&gt;</span><br><span class="line">    &lt;dependency&gt;</span><br><span class="line">        &lt;groupId&gt;org.apache.spark&lt;/groupId&gt;</span><br><span class="line">        &lt;artifactId&gt;spark-streaming-kafka-0-10_2.11&lt;/artifactId&gt;</span><br><span class="line">        &lt;version&gt;2.3.0&lt;/version&gt;</span><br><span class="line">    &lt;/dependency&gt;</span><br><span class="line">    &lt;dependency&gt;</span><br><span class="line">        &lt;groupId&gt;com.github.scopt&lt;/groupId&gt;</span><br><span class="line">        &lt;artifactId&gt;scopt_2.11&lt;/artifactId&gt;</span><br><span class="line">        &lt;version&gt;3.7.0&lt;/version&gt;</span><br><span class="line">    &lt;/dependency&gt;</span><br><span class="line">    &lt;dependency&gt;</span><br><span class="line">        &lt;groupId&gt;org.apache.spark&lt;/groupId&gt;</span><br><span class="line">        &lt;artifactId&gt;spark-hive_2.11&lt;/artifactId&gt;</span><br><span class="line">        &lt;version&gt;2.3.0&lt;/version&gt;</span><br><span class="line">    &lt;/dependency&gt;</span><br><span class="line">&lt;/dependencies&gt;</span><br></pre></td></tr></table></figure></p>
-<p>将spark examples导入转成maven工程，就方便在idea或eclipse里debug学习了，也方便编译成jar，用spark-submit提交任务。</p>
-<p>4、提交spark任务<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">bin/spark-submit --class &quot;org.apache.spark.examples.sql.hive.JavaSparkHiveExample&quot; spark-examples-1.0-SNAPSHOT.jar</span><br></pre></td></tr></table></figure></p>
-<p>至此，可以运行spark的examples程序了。</p>
-
-          
-        
-      
-    </div>
-    
-    
-    
-
-    
-
-    
-
-    
-
-    <footer class="post-footer">
-      
-
-      
-
-      
-
-      
-      
-        <div class="post-eof"></div>
-      
-
-    </footer>
-  </div>
-  
-  
-  
-  </article>
-
-
-    
   </section>
 
   
@@ -1942,7 +1936,7 @@
               
                 <a href="/archives/">
               
-                  <span class="site-state-item-count">22</span>
+                  <span class="site-state-item-count">23</span>
                   <span class="site-state-item-name">日志</span>
                 </a>
               </div>

@@ -1,0 +1,730 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next muse use-motion" lang="zh-Hans">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<meta name="theme-color" content="#222">
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.4" rel="stylesheet" type="text/css" />
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png?v=5.1.4">
+
+
+  <link rel="mask-icon" href="/images/logo.svg?v=5.1.4" color="#222">
+
+
+
+
+
+  <meta name="keywords" content="Hexo, NexT" />
+
+
+
+
+
+
+
+
+
+
+<meta name="description" content="用kafka-console-consumer.sh消费kafka数据时，如果数据是msgpack或protobuf的二进制格式时，打印出来的是乱码，不方便查看。 如何开发一个程序，直接消费kafka的msgpack和protobuf格式的数据，然后转化成json格式输出到控制台呢？ 一种思路是，直接调用KafkaConsumer API，Java程序开发，代价比较高。因为kafka-consol">
+<meta property="og:type" content="article">
+<meta property="og:title" content="kafka-msgpack-json: 将msgpack和protobuf转化成json">
+<meta property="og:url" content="http://yoursite.com/2019/01/16/kafka-msgpack-json-将msgpack和protobuf转化成json/index.html">
+<meta property="og:site_name" content="TechLiving">
+<meta property="og:description" content="用kafka-console-consumer.sh消费kafka数据时，如果数据是msgpack或protobuf的二进制格式时，打印出来的是乱码，不方便查看。 如何开发一个程序，直接消费kafka的msgpack和protobuf格式的数据，然后转化成json格式输出到控制台呢？ 一种思路是，直接调用KafkaConsumer API，Java程序开发，代价比较高。因为kafka-consol">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:updated_time" content="2019-01-16T03:13:12.369Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="kafka-msgpack-json: 将msgpack和protobuf转化成json">
+<meta name="twitter:description" content="用kafka-console-consumer.sh消费kafka数据时，如果数据是msgpack或protobuf的二进制格式时，打印出来的是乱码，不方便查看。 如何开发一个程序，直接消费kafka的msgpack和protobuf格式的数据，然后转化成json格式输出到控制台呢？ 一种思路是，直接调用KafkaConsumer API，Java程序开发，代价比较高。因为kafka-consol">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Muse',
+    version: '5.1.4',
+    sidebar: {"position":"left","display":"post","offset":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://yoursite.com/2019/01/16/kafka-msgpack-json-将msgpack和protobuf转化成json/"/>
+
+
+
+
+
+  <title>kafka-msgpack-json: 将msgpack和protobuf转化成json | TechLiving</title>
+  
+
+
+
+
+
+
+
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">TechLiving</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle">Technology and Life</p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br />
+            
+            关于
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2019/01/16/kafka-msgpack-json-将msgpack和protobuf转化成json/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="Liao Rui">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.jpeg">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="TechLiving">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">kafka-msgpack-json: 将msgpack和protobuf转化成json</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2019-01-16T09:28:23+08:00">
+                2019-01-16
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+
+          
+            
+              <span class="post-comments-count">
+                <span class="post-meta-divider">|</span>
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-comment-o"></i>
+                </span>
+                <a href="/2019/01/16/kafka-msgpack-json-将msgpack和protobuf转化成json/#comments" itemprop="discussionUrl">
+                  <span class="post-comments-count valine-comment-count" data-xid="/2019/01/16/kafka-msgpack-json-将msgpack和protobuf转化成json/" itemprop="commentCount"></span>
+                </a>
+              </span>
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <p>用kafka-console-consumer.sh消费kafka数据时，如果数据是msgpack或protobuf的二进制格式时，打印出来的是乱码，不方便查看。</p>
+<p>如何开发一个程序，直接消费kafka的msgpack和protobuf格式的数据，然后转化成json格式输出到控制台呢？</p>
+<p>一种思路是，直接调用KafkaConsumer API，Java程序开发，代价比较高。因为kafka-console-consumer.sh支持很多参数，包括–topic，–bootstrap-server，–zookeeper等，重新开发一套程序，要兼容这些参数，很困难。</p>
+<p>另一种思路是，借用linux的管道，前面还是用kafka-console-consumer.sh消费，用管道(|)将流数据传给Java程序，Java程序只负责解析二进制数据即可。</p>
+<p>具体做法是：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">kafka-console-consumer.sh --bootstrap-server localhost:9092 --topic test | msgpack2json.sh</span><br></pre></td></tr></table></figure></p>
+<p>msgpack2json.sh只要简单调用java -jar msgpack2json.jar即可。</p>
+<p>Java程序读取管道也很简单：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line">BufferedInputStream bis = new BufferedInputStream(System.in);</span><br><span class="line">byte[] buffer = new byte[4096];</span><br><span class="line">int length;</span><br><span class="line">while ((length = bis.read(buffer)) != -1) &#123;</span><br><span class="line">    if (length &lt;= 1) &#123;</span><br><span class="line">        continue;</span><br><span class="line">    &#125;</span><br><span class="line">    byte[] data = new byte[length];</span><br><span class="line">    System.arraycopy(buffer, 0, data, 0, length);</span><br><span class="line">    </span><br><span class="line">    // handle data</span><br><span class="line">    ......</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>这个方案存在问题。由于是二进制流，BufferedInputStream不知道要读多少个字节才是一条完整的kafka数据。缓存的buffer数组设置大一些，可以减少读到不完整记录的情况。kafka数据量小的时候，问题不大，但在kafka数据量大时，还是会经常出现读不到完整记录的情况。</p>
+<p>如果是文本记录，用BufferedReader读取，换行符分隔记录，就不会出现这个问题。</p>
+<p>所以管道读取不是很好的解决方案。</p>
+<p>从kafka-console-consumer.sh这个脚本入手，底层调用的是ConsoleConsumer这个类。<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">exec $(dirname $0)/kafka-run-class.sh kafka.tools.ConsoleConsumer &quot;$@&quot;</span><br></pre></td></tr></table></figure></p>
+<p>研究ConsoleConsumer.scala的源码，发现打印到控制台的代码是：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line">class DefaultMessageFormatter extends MessageFormatter &#123;</span><br><span class="line">    ......</span><br><span class="line">    def writeTo(consumerRecord: ConsumerRecord[Array[Byte], Array[Byte]], output: PrintStream) &#123;</span><br><span class="line"></span><br><span class="line">        def write(deserializer: Option[Deserializer[_]], sourceBytes: Array[Byte], separator: Array[Byte]) &#123;</span><br><span class="line">          val nonNullBytes = Option(sourceBytes).getOrElse(&quot;null&quot;.getBytes)</span><br><span class="line">          val convertedBytes = deserializer.map(_.deserialize(null, nonNullBytes).toString.getBytes).getOrElse(nonNullBytes)</span><br><span class="line">          output.write(convertedBytes)</span><br><span class="line">          output.write(separator)</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        ......</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>只要将convertedBytes转化成json就达到目的了。</p>
+<p>改造后的代码如下：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line">def write(deserializer: Option[Deserializer[_]], sourceBytes: Array[Byte], separator: Array[Byte]) &#123;</span><br><span class="line">      val nonNullBytes = Option(sourceBytes).getOrElse(&quot;null&quot;.getBytes)</span><br><span class="line">      val convertedBytes = deserializer.map(_.deserialize(null, nonNullBytes).toString.getBytes).getOrElse(nonNullBytes)</span><br><span class="line"></span><br><span class="line">      var parser: Parser = new MsgPackParser</span><br><span class="line">      if (ConsoleConsumer.protoDesc != null) &#123;</span><br><span class="line">        val protoDescBuf = Files.readAllBytes(Paths.get(ConsoleConsumer.protoDesc))</span><br><span class="line">        parser = new ProtobufParser(protoDescBuf)</span><br><span class="line">      &#125;</span><br><span class="line"></span><br><span class="line">      try &#123;</span><br><span class="line">        output.write(parser.parse(convertedBytes).getBytes)</span><br><span class="line">        output.write(separator)</span><br><span class="line">      &#125; catch &#123;</span><br><span class="line">        case e: Throwable =&gt;</span><br><span class="line">          System.err.println(&quot;Unknown error when running consumer: &quot;, e)</span><br><span class="line">          System.exit(1)</span><br><span class="line">      &#125;</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure></p>
+<p>默认按msgpack格式进行解析，如果脚本运行参数里有–proto参数，则按protobuf格式数据进行解析。</p>
+<p>由于protobuf格式是需要描述文件进行解析的，是.proto结尾的文件，定义了每个字段的类型和字段的顺序。如果要动态解析protobuf数据，就需要在脚本参数里指定.proto的描述文件。</p>
+<p>Google的protobuf API里，有DynamicMessage类型，可以用DynamicMessage.parseFrom(Descriptors.Descriptor, byte[])进行解析。byte[]可以传kafka的二进制数据，而Descriptors.Descriptor对象构造需要如下步骤。</p>
+<p>1、生成descriptor文件。<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">protoc --descriptor_set_out=test.proto.desc test.proto</span><br></pre></td></tr></table></figure></p>
+<p>2、从descriptor文件生成Descriptors.Descriptor对象。<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">byte[] schemaDescBuf = Files.readAllBytes(Paths.get(&quot;test.proto.desc&quot;));</span><br><span class="line">DynamicSchema schema = DynamicSchema.parseFrom(schemaDescBuf);</span><br><span class="line">Set&lt;String&gt; set = schema.getMessageTypes();</span><br><span class="line">descriptor = schema.getMessageDescriptor(set.iterator().next());</span><br></pre></td></tr></table></figure></p>
+<p>这里引用了protobuf-dynamic包。<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">&lt;dependency&gt;</span><br><span class="line">    &lt;groupId&gt;com.github.os72&lt;/groupId&gt;</span><br><span class="line">    &lt;artifactId&gt;protobuf-dynamic&lt;/artifactId&gt;</span><br><span class="line">    &lt;version&gt;1.0.0&lt;/version&gt;</span><br><span class="line">&lt;/dependency&gt;</span><br></pre></td></tr></table></figure></p>
+<p>注意，程序默认取的是proto文件里第1个定义的Message对象。如果proto文件里定义了几个Message对象，则程序很难知道要匹配哪个。建议一个proto文件只定义一个Message。</p>
+<p>改造ConsumerConfig.scala程序后，参照kafka-console-consumer.sh生成脚本kafka-msgpack-json.sh。</p>
+<p>最终调用方式为：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"># msgpack</span><br><span class="line">kafka-msgpack-json.sh --bootstrap-server localhost:9092 --topic test</span><br><span class="line"></span><br><span class="line"># protobuf</span><br><span class="line">kafka-msgpack-json.sh --bootstrap-server localhost:9092 --topic test --proto log_message.proto</span><br></pre></td></tr></table></figure></p>
+<p>附上程序源码：<a href="https://github.com/liaorui/kafka-msgpack-json" target="_blank" rel="noopener">kafka-msgpack-json</a></p>
+
+      
+    </div>
+    
+    
+    
+
+    
+      <div>
+        <div id="wechat_subscriber" style="display: block; padding: 10px 0; margin: 20px auto; width: 100%; text-align: center">
+    <img id="wechat_subscriber_qcode" src="/images/weixin_qrcode.jpg" alt="Liao Rui wechat" style="width: 200px; max-width: 100%;"/>
+    <div>欢迎关注我的微信公众号《技术与生活小站》</div>
+</div>
+
+      </div>
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2019/01/11/Greedy正则导致的无限循环/" rel="next" title="Greedy正则导致的无限循环">
+                <i class="fa fa-chevron-left"></i> Greedy正则导致的无限循环
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+          </div>
+        </div>
+      
+
+      
+      
+
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+
+  
+    <div class="comments" id="comments">
+    </div>
+  
+
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+
+      <section class="site-overview-wrap sidebar-panel sidebar-panel-active">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+            
+              <img class="site-author-image" itemprop="image"
+                src="/images/avatar.jpeg"
+                alt="Liao Rui" />
+            
+              <p class="site-author-name" itemprop="name">Liao Rui</p>
+              <p class="site-description motion-element" itemprop="description">Java</p>
+          </div>
+
+          <nav class="site-state motion-element">
+
+            
+              <div class="site-state-item site-state-posts">
+              
+                <a href="/archives/">
+              
+                  <span class="site-state-item-count">23</span>
+                  <span class="site-state-item-name">日志</span>
+                </a>
+              </div>
+            
+
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-tags">
+                <a href="/tags/index.html">
+                  <span class="site-state-item-count">6</span>
+                  <span class="site-state-item-name">标签</span>
+                </a>
+              </div>
+            
+
+          </nav>
+
+          
+
+          
+
+          
+          
+
+          
+          
+
+          
+
+        </div>
+      </section>
+
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">&copy; <span itemprop="copyrightYear">2019</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Liao Rui</span>
+
+  
+</div>
+
+
+  <div class="powered-by">由 <a class="theme-link" target="_blank" href="https://hexo.io">Hexo</a> 强力驱动</div>
+
+
+
+  <span class="post-meta-divider">|</span>
+
+
+
+  <div class="theme-info">主题 &mdash; <a class="theme-link" target="_blank" href="https://github.com/iissnan/hexo-theme-next">NexT.Muse</a> v5.1.4</div>
+
+
+
+
+        
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+  
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.4"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.4"></script>
+
+
+
+  
+  
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.4"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+  <script src="//cdn1.lncld.net/static/js/3.0.4/av-min.js"></script>
+  <script src="//unpkg.com/valine/dist/Valine.min.js"></script>
+  
+  <script type="text/javascript">
+    var GUEST = ['nick','mail','link'];
+    var guest = 'nick,mail,link';
+    guest = guest.split(',').filter(item=>{
+      return GUEST.indexOf(item)>-1;
+    });
+    new Valine({
+        el: '#comments' ,
+        verify: false,
+        notify: false,
+        appId: 'gBKAh0rYcnxSinc8tu0HIpLg-gzGzoHsz',
+        appKey: 'mIuTlwW0NmX5kNaFXMqCCEPi',
+        placeholder: 'Just go go',
+        avatar:'mm',
+        guest_info:guest,
+        pageSize:'10' || 10,
+    });
+  </script>
+
+
+
+  
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>
